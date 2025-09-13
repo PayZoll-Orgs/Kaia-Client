@@ -26,6 +26,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* DappPortal SDK - Note: Replace with actual CDN URL when available */}
+        <script 
+          src="https://sdk.dappportal.io/v1/sdk.js" 
+          async 
+          onError="console.warn('DappPortal SDK failed to load')"
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

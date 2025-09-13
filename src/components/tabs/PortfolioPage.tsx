@@ -5,10 +5,10 @@ import { QRCodeCanvas } from "qrcode.react";
 import { QrCodeIcon, ShareIcon, DocumentDuplicateIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/contexts/AuthContext";
 import SwitchAccountPopup from "@/components/SwitchAccountPopup";
+import WalletConnect from "@/components/WalletConnect";
 
 export default function PortfolioPage() {
-  const { user, logout } = useAuth();
-  const [address] = useState("0x1234567890abcdef1234567890abcdef12345678");
+  const { user, logout, wallet } = useAuth();
   const [showSwitchAccount, setShowSwitchAccount] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [notifications] = useState(3); // Mock notification count
@@ -45,8 +45,9 @@ export default function PortfolioPage() {
   }, []);
 
   const handleCopyWalletAddress = async () => {
+    const addressToCopy = wallet.address || "0x1234567890abcdef1234567890abcdef12345678";
     try {
-      await navigator.clipboard.writeText(address);
+      await navigator.clipboard.writeText(addressToCopy);
       console.log('Wallet address copied to clipboard');
     } catch (err) {
       console.error('Failed to copy wallet address:', err);
@@ -54,7 +55,8 @@ export default function PortfolioPage() {
   };
 
   const handleDownloadQR = () => {
-    const qrCodeData = `ethereum:${address}`;
+    const addressForQR = wallet.address || "0x1234567890abcdef1234567890abcdef12345678";
+    const qrCodeData = `ethereum:${addressForQR}`;
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
@@ -78,15 +80,16 @@ export default function PortfolioPage() {
   };
 
   const handleShareQR = async () => {
+    const addressForShare = wallet.address || "0x1234567890abcdef1234567890abcdef12345678";
     try {
       if (navigator.share) {
         await navigator.share({
           title: 'My Wallet Address',
-          text: `My wallet address: ${address}`,
-          url: `ethereum:${address}`
+          text: `My wallet address: ${addressForShare}`,
+          url: `ethereum:${addressForShare}`
         });
       } else {
-        await navigator.clipboard.writeText(`My wallet address: ${address}`);
+        await navigator.clipboard.writeText(`My wallet address: ${addressForShare}`);
         console.log('Wallet address copied to clipboard for sharing');
       }
     } catch (err) {
@@ -124,9 +127,16 @@ export default function PortfolioPage() {
         </div>
 
         {/* Greeting */}
-        <div className="px-6 mb-12">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-1">Hello Muminul!</h1>
-          <p className="text-gray-500">Let's save your money.</p>
+        <div className="px-6 mb-8">
+          <h1 className="text-2xl font-semibold text-gray-900 mb-1">
+            Hello {user?.displayName || 'User'}!
+          </h1>
+          <p className="text-gray-500">Let's manage your crypto wallet.</p>
+        </div>
+
+        {/* Wallet Connection */}
+        <div className="px-6 mb-8">
+          <WalletConnect compact={true} showBalance={false} />
         </div>
 
         {/* Card Stack */}
@@ -182,17 +192,34 @@ export default function PortfolioPage() {
               <div className="space-y-6">
                 <div>
                   <div className="text-white/90 text-base font-light mb-1">Balance</div>
-                  <div className="text-white text-[32px] font-normal">$8,182.80</div>
+                  <div className="text-white text-[32px] font-normal">
+                    {wallet.isConnected && wallet.balance 
+                      ? `${wallet.balance} KAIA` 
+                      : 'Connect Wallet'
+                    }
+                  </div>
                 </div>
                 
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="text-white/90 text-base font-light mb-1">Network</div>
-                    <div className="text-white text-xl font-normal">KAIA Network</div>
+                    <div className="text-white text-xl font-normal">
+                      Kaia Testnet
+                      {wallet.walletType && (
+                        <span className="text-sm text-white/70 block">
+                          {wallet.walletType === 'Liff' ? 'LINE Wallet' : wallet.walletType}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="text-right">
                     <div className="text-white/90 text-base font-light mb-1">Address</div>
-                    <div className="text-white text-base font-light">0x1234...5678</div>
+                    <div className="text-white text-base font-light">
+                      {wallet.address 
+                        ? `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`
+                        : 'Not Connected'
+                      }
+                    </div>
                   </div>
                 </div>
               </div>
@@ -267,11 +294,12 @@ export default function PortfolioPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Wallet Address</label>
                   <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <code className="flex-1 text-xs text-gray-600 font-mono break-all">
-                      {address}
+                      {wallet.address || "Not connected"}
                     </code>
                     <button
                       onClick={handleCopyWalletAddress}
-                      className="p-2 text-gray-500 hover:text-green-600 transition-colors"
+                      disabled={!wallet.address}
+                      className="p-2 text-gray-500 hover:text-green-600 transition-colors disabled:opacity-50"
                       title="Copy wallet address"
                     >
                       <DocumentDuplicateIcon className="w-5 h-5" />
@@ -320,62 +348,85 @@ export default function PortfolioPage() {
           </div>
         )}
 
+        {/* Wallet Details */}
+        {wallet.isConnected && (
+          <div className="mt-8 px-4">
+            <WalletConnect showBalance={true} compact={false} />
+          </div>
+        )}
+
         {/* My Assets */}
         <div className="mt-12 px-4">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">My Assets</h2>
           
-          {/* KAIA Asset */}
-          <div className="bg-white rounded-2xl p-4 mb-4 border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                  <Image src="/next.svg" alt="KAIA" width={24} height={24} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-900 font-medium">KAIA</span>
-                    <span className="text-gray-500">• $ 66,255.01</span>
+          {wallet.isConnected ? (
+            <>
+              {/* KAIA Asset - Real Data */}
+              <div className="bg-white rounded-2xl p-4 mb-4 border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                      <span className="text-purple-600 font-bold text-sm">K</span>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-900 font-medium">KAIA</span>
+                        <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+                          Testnet
+                        </span>
+                      </div>
+                      <div className="text-gray-500 text-sm">
+                        {wallet.balance || '0.000000'} KAIA
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-gray-500 text-sm">120.0 KAIA</div>
+                  <div className="text-gray-400 text-sm">Testnet</div>
                 </div>
               </div>
-              <div className="text-green-500 font-medium">+28.43%</div>
-            </div>
-          </div>
 
-          {/* USDT Asset */}
-          <div className="bg-white rounded-2xl p-4 border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                  <Image src="/next.svg" alt="USDT" width={24} height={24} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-900 font-medium">USDT</span>
-                    <span className="text-gray-500">• $ 3,330.18</span>
+              {/* USDT Asset - Testnet */}
+              <div className="bg-white rounded-2xl p-4 border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                      <span className="text-green-600 font-bold text-sm">$</span>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-900 font-medium">USDT</span>
+                        <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+                          Testnet
+                        </span>
+                      </div>
+                      <div className="text-gray-500 text-sm">0.00 USDT</div>
+                    </div>
                   </div>
-                  <div className="text-gray-500 text-sm">500.0 USDT</div>
+                  <div className="text-gray-400 text-sm">Testnet</div>
                 </div>
               </div>
-              <div className="text-green-500 font-medium">+12.43%</div>
+            </>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>Connect your wallet to view assets</p>
             </div>
-          </div>
+          )}
         </div>
       </header>
 
       {/* QR Code Section */}
-      <section className="px-6 mb-6">
-        <div className="rounded-2xl border border-gray-200 p-4 flex items-center justify-between">
-          <div>
-            <div className="text-sm text-gray-600 font-medium ">Receive</div>
-            <div className="text-xs text-gray-600">Share your address</div>
+      {wallet.address && (
+        <section className="px-6 mb-6">
+          <div className="rounded-2xl border border-gray-200 p-4 flex items-center justify-between">
+            <div>
+              <div className="text-sm text-gray-600 font-medium ">Receive</div>
+              <div className="text-xs text-gray-600">Share your wallet address</div>
+            </div>
+            <div className="w-24 h-24 flex items-center justify-center bg-white rounded-lg">
+              <QRCodeCanvas value={wallet.address} size={92} />
+            </div>
           </div>
-          <div className="w-24 h-24 flex items-center justify-center bg-white rounded-lg">
-            <QRCodeCanvas value={address} size={92} />
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
     </main>
   );
 }
