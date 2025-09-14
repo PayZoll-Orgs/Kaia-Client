@@ -18,6 +18,9 @@ interface AuthContextType {
   // Wallet State
   wallet: WalletState;
   
+  // Onboarding State
+  needsOnboarding: boolean;
+  
   // Auth Actions
   login: () => Promise<void>;
   logout: () => void;
@@ -25,13 +28,15 @@ interface AuthContextType {
   
   // Wallet Actions
   connectWallet: () => Promise<string | null>;
-  autoCreateWallet: () => Promise<string | null>;
   disconnectWallet: () => Promise<void>;
   signMessage: (message: string) => Promise<string>;
   connectAndSign: (message: string) => Promise<{ account: string; signature: string }>;
   refreshWalletData: () => Promise<void>;
   sendTransaction: (to: string, value: string, gasLimit?: string) => Promise<string>;
   getTokenBalance: (contractAddress: string) => Promise<string>;
+  
+  // Onboarding Actions
+  completeOnboarding: () => void;
 }
 
 // Create context
@@ -62,80 +67,65 @@ export function AuthProvider({ children }: AuthProviderProps) {
     walletType: null,
   });
 
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  
+  // Debug logging for onboarding state changes
+  console.log('🎯 AuthContext needsOnboarding state:', needsOnboarding);
+
   const lineAuth = LineAuth.getInstance();
   const walletService = WalletService.getInstance();
   const backendService = getWalletBackendService();
 
-  // Handle wallet setup: check backend first, then create if needed
-  const handleWalletSetupForUser = async (lineUserId: string) => {
+  // Check if user has existing wallet in backend and determine if onboarding is needed
+  const checkExistingWallet = async (lineUserId: string) => {
     try {
-      console.log('🔍 Checking mock backend for existing wallet for dapp ID:', lineUserId);
+      console.log('🔍 Checking backend for existing wallet for dapp ID:', lineUserId);
       
-      // Step 1: Check mock backend for existing wallet
       backendService.debugShowAllWallets(); // Show current storage state
       const backendWallet = await backendService.getWalletByLineUserId(lineUserId);
       
       if (backendWallet.success && backendWallet.data?.walletAddress) {
-        console.log('✅ Found existing wallet in mock backend:', backendWallet.data.walletAddress);
-        console.log('📋 Wallet details:', backendWallet.data);
-        
-        // Try to connect to existing wallet
-        try {
-          await walletService.connectWallet();
-          console.log('✅ Connected to existing wallet successfully');
-        } catch (connectError) {
-          console.warn('⚠️ Could not connect to existing wallet, creating new one');
-          await createAndSaveWallet(lineUserId);
-        }
+        console.log('✅ Found existing wallet in backend:', backendWallet.data.walletAddress);
+        console.log('💡 User has existing wallet - no onboarding needed');
+        setNeedsOnboarding(false);
+        return backendWallet.data.walletAddress;
       } else {
-        console.log('❌ No existing wallet found in mock backend for dapp ID:', lineUserId);
-        console.log('🔧 Creating new wallet on Kaia testnet...');
-        await createAndSaveWallet(lineUserId);
+        console.log('🎯 No existing wallet found - user needs onboarding');
+        console.log('🔄 Setting needsOnboarding to TRUE');
+        setNeedsOnboarding(true);
+        return null;
       }
     } catch (error) {
-      console.error('❌ Wallet setup failed:', error);
-      // Don't block the app if wallet setup fails
+      console.error('❌ Failed to check existing wallet:', error);
+      setNeedsOnboarding(true); // Default to onboarding if check fails
+      return null;
     }
   };
 
-  // Create new wallet and save to backend
-  const createAndSaveWallet = async (lineUserId: string) => {
+  // Save wallet to backend after user connects/creates it
+  const saveWalletToBackend = async (lineUserId: string, walletAddress: string) => {
     try {
-      console.log('🚀 Creating new wallet on Kaia testnet for dapp ID:', lineUserId);
-      const walletAddress = await walletService.autoCreateWallet();
+      console.log('💾 Saving wallet to backend...', { lineUserId, walletAddress });
       
-      if (walletAddress) {
-        const walletType = walletService.getState().walletType || 'DappPortal';
-        const privateKey = walletService.getPrivateKey();
-        
-        console.log('✅ Wallet created successfully:', walletAddress);
-        console.log('💾 Saving wallet to mock backend...');
-        console.log('🔐 Including private key:', !!privateKey);
-        
-        // Save to mock backend with private key
-        const backendResult = await backendService.saveWallet({
-          lineUserId,
-          walletAddress,
-          walletType,
-          network: 'testnet',
-          privateKey: privateKey || undefined // Only include if exists
-        });
-        
-        if (backendResult.success) {
-          console.log('✅ Wallet saved to mock backend successfully!');
-          console.log('📋 Saved data:', backendResult.data);
-          
-          // Clear private key from wallet service after successful backend storage
-          if (privateKey) {
-            walletService.clearPrivateKey();
-          }
-        } else {
-          console.warn('⚠️ Wallet created but mock backend save failed:', backendResult.error);
-        }
+      const walletState = walletService.getState();
+      
+      const saveResult = await backendService.saveWallet({
+        lineUserId,
+        walletAddress,
+        walletType: walletState.walletType || 'Web',
+        network: 'testnet'
+      });
+      
+      if (saveResult.success) {
+        console.log('✅ Wallet saved to backend successfully');
+      } else {
+        console.error('❌ Failed to save wallet to backend:', saveResult.error);
       }
+      
+      return saveResult.success;
     } catch (error) {
-      console.error('❌ Failed to create and save wallet:', error);
-      throw error;
+      console.error('❌ Wallet save failed:', error);
+      return false;
     }
   };
 
@@ -144,10 +134,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const unsubscribeAuth = lineAuth.subscribe((newState) => {
       setAuthState(newState);
       
-      // Trigger wallet setup when user becomes authenticated
+      // Check for existing wallet when user becomes authenticated (no auto-creation)
       if (newState.isAuthenticated && newState.user?.userId && !authState.isAuthenticated) {
-        console.log('🔐 User just authenticated, setting up wallet...');
-        handleWalletSetupForUser(newState.user.userId);
+        console.log('🔐 User just authenticated, checking for existing wallet...');
+        checkExistingWallet(newState.user.userId);
       }
     });
 
@@ -163,7 +153,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       // Handle wallet setup after successful authentication
       if (authState.isAuthenticated && authState.user?.userId) {
-        await handleWalletSetupForUser(authState.user.userId);
+        await checkExistingWallet(authState.user.userId);
       }
     };
 
@@ -175,6 +165,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       unsubscribeWallet();
     };
   }, [lineAuth, walletService]);
+
+  // Complete onboarding (called after wallet is set up)
+  const completeOnboarding = () => {
+    console.log('🎉 Onboarding completed!');
+    setNeedsOnboarding(false);
+  };
 
   const contextValue: AuthContextType = {
     // Auth State
@@ -188,6 +184,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Wallet State
     wallet: walletState,
     
+    // Onboarding State
+    needsOnboarding,
+    
     // Auth Actions
     login: async () => {
       try {
@@ -196,7 +195,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // After successful login, handle wallet setup (check backend first)
         if (authState.isAuthenticated && authState.user?.userId) {
           console.log('🔐 Login successful, setting up wallet for user:', authState.user.userId);
-          await handleWalletSetupForUser(authState.user.userId);
+          await checkExistingWallet(authState.user.userId);
         }
       } catch (error) {
         console.error('Login failed:', error);
@@ -205,6 +204,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     
     logout: () => {
       lineAuth.logout();
+      setNeedsOnboarding(false); // Reset onboarding state on logout
       // Also disconnect wallet on logout
       walletService.disconnectWallet().catch(console.error);
     },
@@ -219,25 +219,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         const walletAddress = await walletService.connectWallet();
         
-        // If wallet connected successfully and user is authenticated, sync with backend
+        // Save wallet to backend after successful connection
         if (walletAddress && authState.user?.userId) {
-          const walletType = walletService.getState().walletType || 'Unknown';
+          await saveWalletToBackend(authState.user.userId, walletAddress);
           
-          try {
-            const backendResult = await backendService.syncWalletData(
-              authState.user.userId,
-              walletAddress,
-              walletType
-            );
-            
-            if (backendResult.success) {
-              console.log('Wallet data synced with backend:', backendResult.data);
-            } else {
-              console.warn('Failed to sync wallet with backend:', backendResult.error);
-            }
-          } catch (backendError) {
-            console.error('Backend sync error:', backendError);
-            // Don't throw here - wallet connection should still work even if backend fails
+          // If user was in onboarding, mark it as completed
+          if (needsOnboarding) {
+            console.log('🎯 Wallet created during onboarding - marking onboarding as completed');
+            setNeedsOnboarding(false);
           }
         }
         
@@ -248,35 +237,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     },
 
-    autoCreateWallet: async () => {
-      try {
-        const walletAddress = await walletService.autoCreateWallet();
-        
-        // If wallet created successfully and user is authenticated, sync with backend
-        if (walletAddress && authState.user?.userId) {
-          const walletType = walletService.getState().walletType || 'Unknown';
-          
-          try {
-            const backendResult = await backendService.syncWalletData(
-              authState.user.userId,
-              walletAddress,
-              walletType
-            );
-            
-            if (backendResult.success) {
-              console.log('Auto-created wallet synced with backend:', backendResult.data);
-            }
-          } catch (backendError) {
-            console.error('Backend sync error during auto-creation:', backendError);
-          }
-        }
-        
-        return walletAddress;
-      } catch (error) {
-        console.error('Auto wallet creation failed:', error);
-        throw error;
-      }
-    },
 
     disconnectWallet: async () => {
       try {
@@ -331,6 +291,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw error;
       }
     },
+    
+    // Onboarding Actions
+    completeOnboarding,
   };
 
   return (

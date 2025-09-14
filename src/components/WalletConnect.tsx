@@ -26,7 +26,6 @@ export default function WalletConnect({
   const { 
     wallet, 
     connectWallet, 
-    autoCreateWallet,
     disconnectWallet, 
     refreshWalletData, 
     getTokenBalance 
@@ -37,23 +36,20 @@ export default function WalletConnect({
 
   const handleConnect = async () => {
     try {
-      // Try to connect existing wallet first, if not available auto-create
-      let address = await connectWallet();
+      console.log('🔗 Connecting wallet...');
+      console.log('💡 DappPortal will show wallet creation UI if user has no wallet');
       
-      if (!address) {
-        console.log('No existing wallet found, creating new one...');
-        address = await autoCreateWallet();
-      }
+      const address = await connectWallet();
       
       if (address) {
-        console.log('Wallet ready:', address);
+        console.log('✅ Wallet connected:', address);
         // Optionally load USDT balance
         if (showBalance) {
           loadUsdtBalance();
         }
       }
     } catch (error) {
-      console.error('Failed to setup wallet:', error);
+      console.error('❌ Wallet connection failed:', error);
     }
   };
 

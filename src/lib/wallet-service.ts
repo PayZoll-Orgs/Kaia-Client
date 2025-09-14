@@ -1,7 +1,7 @@
 // LINE DappPortal Wallet Service for Kaia Testnet
 // This service handles wallet operations using LINE's DappPortal SDK
+// Wallet creation happens through DappPortal UI when user connects
 import DappPortalSDK from '@linenext/dapp-portal-sdk';
-import { JsonRpcProvider, Wallet } from '@kaiachain/ethers-ext';
 
 export interface WalletState {
   isConnected: boolean;
@@ -125,35 +125,6 @@ export class WalletService {
     return this.sdkInstance;
   }
 
-  // Create new wallet directly on Kaia testnet using ethers-ext
-  private async createWalletOnKaiaTestnet(): Promise<{ address: string; privateKey: string }> {
-    console.log('🚀 Creating new wallet directly on Kaia testnet...');
-    
-    try {
-      // Connect to Kaia testnet RPC
-      const provider = new JsonRpcProvider('https://public-en-kairos.node.kaia.io');
-      console.log('✅ Connected to Kaia testnet RPC');
-      
-      // Create random wallet
-      const wallet = Wallet.createRandom();
-      console.log('✅ Generated new wallet:', wallet.address);
-      
-      // Connect wallet to provider
-      const connectedWallet = wallet.connect(provider);
-      
-      // Check initial balance (should be 0)
-      const balance = await connectedWallet.provider.getBalance(wallet.address);
-      console.log('🔍 New wallet balance:', balance.toString(), 'peb (0 KAIA expected)');
-      
-      return {
-        address: wallet.address,
-        privateKey: wallet.privateKey
-      };
-    } catch (error) {
-      console.error('❌ Failed to create wallet on Kaia testnet:', error);
-      throw error;
-    }
-  }
 
   // Subscribe to wallet state changes
   subscribe(listener: (state: WalletState) => void): () => void {
@@ -176,64 +147,6 @@ export class WalletService {
     return { ...this.walletState };
   }
 
-  // Get private key (for backend storage only)
-  getPrivateKey(): string | null {
-    return (this.walletState as any).privateKey || null;
-  }
-
-  // Clear private key after backend storage
-  clearPrivateKey(): void {
-    delete (this.walletState as any).privateKey;
-    console.log('🔐 Private key cleared from wallet state');
-  }
-
-  // Development helper: Get all stored wallet info from sessionStorage
-  static getStoredWalletInfo(): { [address: string]: any } {
-    if (typeof window === 'undefined') return {};
-    
-    const walletInfo: { [address: string]: any } = {};
-    
-    // Iterate through sessionStorage to find wallet info
-    for (let i = 0; i < sessionStorage.length; i++) {
-      const key = sessionStorage.key(i);
-      if (key && key.startsWith('kaia_wallet_') && key.endsWith('_info')) {
-        try {
-          const info = JSON.parse(sessionStorage.getItem(key) || '{}');
-          walletInfo[info.address] = info;
-        } catch (error) {
-          console.warn('Failed to parse wallet info:', key);
-        }
-      }
-    }
-    
-    return walletInfo;
-  }
-
-  // Development helper: Log all stored wallets for easy copying
-  static logStoredWallets(): void {
-    const wallets = this.getStoredWalletInfo();
-    
-    if (Object.keys(wallets).length === 0) {
-      console.log('📭 No wallets found in sessionStorage');
-      return;
-    }
-    
-    console.log('🔐 Development Wallets (SessionStorage):');
-    console.log('=====================================');
-    
-    Object.values(wallets).forEach((wallet: any, index: number) => {
-      console.log(`\n💳 Wallet ${index + 1}:`);
-      console.log(`   Address: ${wallet.address}`);
-      console.log(`   Private Key: ${wallet.privateKey}`);
-      console.log(`   Network: ${wallet.network}`);
-      console.log(`   Created: ${wallet.createdAt}`);
-      console.log(`   Copy Command: sessionStorage.getItem("kaia_wallet_${wallet.address}")`);
-    });
-    
-    console.log('\n📋 Quick Access:');
-    console.log('   WalletService.logStoredWallets() - Show this list');
-    console.log('   WalletService.getStoredWalletInfo() - Get wallet object');
-  }
 
   // Initialize the wallet service
   async initialize(): Promise<boolean> {
@@ -248,7 +161,7 @@ export class WalletService {
       console.log('🔍 Getting wallet provider from singleton SDK...');
       this.walletProvider = sdk.getWalletProvider();
       console.log('🔍 Wallet provider received:', !!this.walletProvider);
-      console.log('🔍 Wallet provider type:', typeof this.walletProvider);
+      console.warn('🔍 Wallet provider', this.walletProvider);
       
       // Check if already connected
       try {
@@ -267,6 +180,7 @@ export class WalletService {
         if (accounts && accounts.length > 0) {
           const address = accounts[0];
           const walletType = this.walletProvider.getWalletType();
+          console.log('🔍 Wallet type:', walletType);
           const balance = await this.getBalance(address);
           
           console.log('✅ Found existing wallet connection:', address);
@@ -314,27 +228,33 @@ export class WalletService {
 
 
 
-  // Connect wallet for testnet (automatically creates if needed)
+  // Connect wallet - this will show DappPortal UI for wallet creation if user has no wallet
   async connectWallet(): Promise<string | null> {
     if (!this.walletProvider) {
       throw new Error('Wallet provider not initialized');
     }
 
     this.updateState({ isLoading: true, error: null });
+    console.log('🔗 Requesting wallet connection...');
+    console.log('💡 If user has no wallet, DappPortal will show wallet creation UI');
 
     try {
-      // Request account connection (this will create wallet if it doesn't exist)
+      // This is the key call - it will show wallet creation UI if user has no wallet
+      // DappPortal handles wallet creation through its secure interface
       const accounts = await this.walletProvider.request({ 
         method: 'kaia_requestAccounts' 
       }) as string[];
 
       if (!accounts || accounts.length === 0) {
-        throw new Error('No accounts returned from wallet');
+        throw new Error('No accounts returned from wallet - user may have cancelled');
       }
 
       const address = accounts[0];
       const walletType = this.walletProvider.getWalletType();
       
+      console.log('✅ Wallet connected successfully:', address);
+      console.log('🔍 Wallet type:', walletType);
+      
       // Verify we're on testnet
       await this.verifyTestnetConnection();
       
@@ -351,206 +271,28 @@ export class WalletService {
 
       return address;
     } catch (error) {
-      console.error('Wallet connection failed:', error);
-      this.updateState({
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Wallet connection failed',
-      });
-      throw error;
-    }
-  }
-
-  // Auto-create wallet during login
-  // Strategy 1: Create new wallet directly on Kaia testnet using ethers-ext
-  // Strategy 2: Fallback to connect to existing wallet via DappPortal SDK
-  async autoCreateWallet(): Promise<string | null> {
-    console.log('🚀 Starting auto wallet creation process...');
-    console.log('🔍 Wallet provider initialized:', !!this.walletProvider);
-    console.log('🔍 Current wallet state:', {
-      isConnected: this.walletState.isConnected,
-      address: this.walletState.address,
-      error: this.walletState.error
-    });
-
-    if (!this.walletProvider) {
-      console.error('❌ Wallet provider not initialized - cannot create wallet');
-      console.error('🔍 SDK initialization may have failed. Check previous errors.');
-      throw new Error('Wallet provider not initialized');
-    }
-
-    this.updateState({ isLoading: true, error: null });
-
-    try {
-      console.log('🔍 Step 1: Checking for existing wallet accounts...');
+      console.error('❌ Wallet connection failed:', error);
       
-      // Check if wallet already exists
-      const existingAccounts = await this.walletProvider.request({ 
-        method: 'kaia_accounts' 
-      }) as string[];
-
-      console.log('🔍 Existing accounts found:', existingAccounts);
-
-      if (existingAccounts && existingAccounts.length > 0) {
-        console.log('✅ Wallet already exists, connecting to:', existingAccounts[0]);
-        // Wallet already exists, just connect
-        return await this.connectWallet();
-      }
-
-      console.log('🔍 Step 2: No existing wallet found, creating new wallet...');
-      console.log('🚀 Using direct Kaia testnet wallet creation');
-
-      // Strategy 1: Create wallet directly on Kaia testnet
-      let address: string;
-      let privateKey: string | undefined;
-      
-      try {
-        console.log('🔍 Creating wallet directly on Kaia testnet...');
-        const newWallet = await this.createWalletOnKaiaTestnet();
-        address = newWallet.address;
-        privateKey = newWallet.privateKey;
-        
-        console.log('✅ Wallet created successfully on Kaia testnet:', address);
-        
-        // Store private key securely (will be saved to mock backend)
-        console.log('🔐 Private key generated - will be stored in mock backend');
-        
-        // For development: Also store in sessionStorage for easy copying
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem(`kaia_wallet_${address}`, privateKey);
-          sessionStorage.setItem(`kaia_wallet_${address}_info`, JSON.stringify({
-            address,
-            privateKey,
-            network: 'testnet',
-            createdAt: new Date().toISOString()
-          }));
-          console.log('💾 Private key also stored in sessionStorage for development');
-          console.log('🔗 Access via: sessionStorage.getItem("kaia_wallet_' + address + '")');
-          
-          // Make WalletService globally accessible for development
-          (window as any).WalletService = WalletService;
-        }
-        
-      } catch (directCreationError) {
-        console.error('❌ Direct wallet creation failed:', directCreationError);
-        console.log('🔄 Falling back to DappPortal connection...');
-        
-        // Strategy 2: Fallback to DappPortal connection
-        try {
-          console.log('🔍 Calling kaia_requestAccounts to connect to existing wallet...');
-          const accounts = await this.walletProvider.request({ 
-            method: 'kaia_requestAccounts' 
-          }) as string[];
-          
-          if (!accounts || accounts.length === 0) {
-            throw new Error('No accounts returned from wallet connection');
-          }
-          
-          address = accounts[0];
-          console.log('✅ Connected to existing wallet:', address);
-        } catch (connectionError) {
-          console.error('❌ Both wallet creation and connection failed');
-          const errorMessage = directCreationError instanceof Error ? directCreationError.message : String(directCreationError);
-          throw new Error(`Wallet setup failed: ${errorMessage}`);
-        }
-      }
-
-      console.log('🔍 Wallet setup complete. Address:', address);
-
-      if (!address) {
-        console.error('❌ No wallet address obtained');
-        throw new Error('Failed to create or connect to wallet - no address returned');
-      }
-
-      const walletType = this.walletProvider ? this.walletProvider.getWalletType() : WalletType.Web;
-      
-      console.log('✅ Wallet ready!');
-      console.log('🔍 Wallet details:', { address, walletType });
-      console.log('📋 Note: Wallet created directly on Kaia testnet or connected to existing wallet');
-      
-      console.log('🔍 Step 3: Verifying testnet connection...');
-      // Verify we're on testnet
-      await this.verifyTestnetConnection();
-      
-      console.log('🔍 Step 4: Getting wallet balance...');
-      // Get balance
-      const balance = await this.getBalance(address);
-      console.log('🔍 Wallet balance:', balance, 'KAIA');
-
-      // Store private key temporarily in wallet state for backend saving
-      (this.walletState as any).privateKey = privateKey || null;
-
-      this.updateState({
-        isConnected: true,
-        address,
-        balance,
-        walletType,
-        isLoading: false,
-      });
-
-      console.log('🎉 Auto-created wallet on Kaia testnet:', address);
-      console.log('🔍 Final wallet state:', this.getState());
-      console.log('🔐 Private key available for backend storage:', !!privateKey);
-      
-      // Show development access info
-      if (privateKey) {
-        console.log('\n🛠️  DEVELOPMENT ACCESS:');
-        console.log('   📋 Copy private key: sessionStorage.getItem("kaia_wallet_' + address + '")');
-        console.log('   📊 View all wallets: WalletService.logStoredWallets()');
-      }
-      
-      return address;
-    } catch (error) {
-      console.error('❌ Auto wallet creation failed!');
-      console.error('🔍 Error details:');
-      console.error('  - Error type:', error instanceof Error ? error.constructor.name : typeof error);
-      console.error('  - Error message:', error instanceof Error ? error.message : String(error));
-      console.error('  - Stack trace:', error instanceof Error ? error.stack : 'N/A');
-      
-      // Additional context logging
-      console.error('🔍 Context at failure:');
-      console.error('  - Wallet provider available:', !!this.walletProvider);
-      console.error('  - Current state:', this.getState());
-      
+      // Enhanced error handling for common DappPortal scenarios
+      let errorMessage = 'Wallet connection failed';
       if (error instanceof Error) {
-        if (error.message.includes('403') || error.message.includes('Forbidden')) {
-          console.error('🚫 Authorization issue - check CLIENT_ID');
-        } else if (error.message.includes('User denied')) {
-          console.error('👤 User rejected wallet creation');
-        } else if (error.message.includes('timeout')) {
-          console.error('⏰ Request timed out');
-        } else if (error.message.includes('Internal JSON-RPC error')) {
-          console.error('🔌 JSON-RPC Internal Error - likely CLIENT_ID authorization issue');
-          console.error('   This usually means:');
-          console.error('   1. CLIENT_ID not authorized for wallet operations');
-          console.error('   2. CLIENT_ID is for wrong environment (staging vs prod)');
-          console.error('   3. DappPortal service configuration issue');
-        }
-      }
-      
-      // Check for JSON-RPC error object
-      if (typeof error === 'object' && error !== null && 'code' in error) {
-        const rpcError = error as { code: number; message: string };
-        console.error('🔌 JSON-RPC Error Details:');
-        console.error('   Code:', rpcError.code);
-        console.error('   Message:', rpcError.message);
-        
-        if (rpcError.code === -32603) {
-          console.error('🚫 -32603 = Internal Error');
-          console.error('   Likely causes:');
-          console.error('   • CLIENT_ID not authorized for wallet creation');
-          console.error('   • CLIENT_ID environment mismatch');
-          console.error('   • DappPortal service configuration issue');
-          console.error('📋 Contact DappPortal support with CLIENT_ID: feab7d6b-52d3-4568-ab0f-ad72c35fe884');
+        if (error.message.includes('User denied') || error.message.includes('cancelled')) {
+          errorMessage = 'User cancelled wallet connection';
+        } else if (error.message.includes('No accounts')) {
+          errorMessage = 'No wallet accounts available - please create a wallet first';
+        } else {
+          errorMessage = error.message;
         }
       }
       
       this.updateState({
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Auto wallet creation failed',
+        error: errorMessage,
       });
       throw error;
     }
   }
+
 
   // Verify testnet connection
   private async verifyTestnetConnection(): Promise<void> {
@@ -646,6 +388,7 @@ export class WalletService {
 
       const [account, signature] = result;
       const walletType = this.walletProvider.getWalletType();
+      console.log('🔍 Wallet type:', walletType);
       const balance = await this.getBalance(account);
 
       this.updateState({
