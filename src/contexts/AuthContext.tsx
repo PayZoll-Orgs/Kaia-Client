@@ -66,10 +66,89 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const walletService = WalletService.getInstance();
   const backendService = getWalletBackendService();
 
+  // Handle wallet setup: check backend first, then create if needed
+  const handleWalletSetupForUser = async (lineUserId: string) => {
+    try {
+      console.log('🔍 Checking mock backend for existing wallet for dapp ID:', lineUserId);
+      
+      // Step 1: Check mock backend for existing wallet
+      backendService.debugShowAllWallets(); // Show current storage state
+      const backendWallet = await backendService.getWalletByLineUserId(lineUserId);
+      
+      if (backendWallet.success && backendWallet.data?.walletAddress) {
+        console.log('✅ Found existing wallet in mock backend:', backendWallet.data.walletAddress);
+        console.log('📋 Wallet details:', backendWallet.data);
+        
+        // Try to connect to existing wallet
+        try {
+          await walletService.connectWallet();
+          console.log('✅ Connected to existing wallet successfully');
+        } catch (connectError) {
+          console.warn('⚠️ Could not connect to existing wallet, creating new one');
+          await createAndSaveWallet(lineUserId);
+        }
+      } else {
+        console.log('❌ No existing wallet found in mock backend for dapp ID:', lineUserId);
+        console.log('🔧 Creating new wallet on Kaia testnet...');
+        await createAndSaveWallet(lineUserId);
+      }
+    } catch (error) {
+      console.error('❌ Wallet setup failed:', error);
+      // Don't block the app if wallet setup fails
+    }
+  };
+
+  // Create new wallet and save to backend
+  const createAndSaveWallet = async (lineUserId: string) => {
+    try {
+      console.log('🚀 Creating new wallet on Kaia testnet for dapp ID:', lineUserId);
+      const walletAddress = await walletService.autoCreateWallet();
+      
+      if (walletAddress) {
+        const walletType = walletService.getState().walletType || 'DappPortal';
+        const privateKey = walletService.getPrivateKey();
+        
+        console.log('✅ Wallet created successfully:', walletAddress);
+        console.log('💾 Saving wallet to mock backend...');
+        console.log('🔐 Including private key:', !!privateKey);
+        
+        // Save to mock backend with private key
+        const backendResult = await backendService.saveWallet({
+          lineUserId,
+          walletAddress,
+          walletType,
+          network: 'testnet',
+          privateKey: privateKey || undefined // Only include if exists
+        });
+        
+        if (backendResult.success) {
+          console.log('✅ Wallet saved to mock backend successfully!');
+          console.log('📋 Saved data:', backendResult.data);
+          
+          // Clear private key from wallet service after successful backend storage
+          if (privateKey) {
+            walletService.clearPrivateKey();
+          }
+        } else {
+          console.warn('⚠️ Wallet created but mock backend save failed:', backendResult.error);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Failed to create and save wallet:', error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     // Subscribe to auth state changes
     const unsubscribeAuth = lineAuth.subscribe((newState) => {
       setAuthState(newState);
+      
+      // Trigger wallet setup when user becomes authenticated
+      if (newState.isAuthenticated && newState.user?.userId && !authState.isAuthenticated) {
+        console.log('🔐 User just authenticated, setting up wallet...');
+        handleWalletSetupForUser(newState.user.userId);
+      }
     });
 
     // Subscribe to wallet state changes
@@ -82,25 +161,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await lineAuth.initialize();
       await walletService.initialize();
       
-      // Auto-create wallet after successful authentication
+      // Handle wallet setup after successful authentication
       if (authState.isAuthenticated && authState.user?.userId) {
-        try {
-          // Check if user already has wallet from DappPortal or backend
-          const existingWallet = await walletService.getWalletByLineUserId(authState.user.userId);
-          
-          if (existingWallet.address) {
-            console.log('Found existing wallet for user:', existingWallet.address);
-            // User has existing wallet, just connect to it
-            await walletService.connectWallet();
-          } else {
-            console.log('No existing wallet found, creating new wallet for user');
-            // Auto-create wallet for new user
-            await walletService.autoCreateWallet();
-          }
-        } catch (error) {
-          console.error('Auto wallet setup failed:', error);
-          // Don't block the app if wallet creation fails
-        }
+        await handleWalletSetupForUser(authState.user.userId);
       }
     };
 
@@ -130,28 +193,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         await lineAuth.login();
         
-        // After successful login, auto-create wallet
+        // After successful login, handle wallet setup (check backend first)
         if (authState.isAuthenticated && authState.user?.userId) {
-          try {
-            console.log('Auto-creating wallet for newly logged in user');
-            const walletAddress = await walletService.autoCreateWallet();
-            
-            if (walletAddress) {
-              // Sync with backend
-              const walletType = walletService.getState().walletType || 'Unknown';
-              const backendResult = await backendService.syncWalletData(
-                authState.user.userId,
-                walletAddress,
-                walletType
-              );
-              
-              if (backendResult.success) {
-                console.log('Wallet auto-created and synced with backend');
-              }
-            }
-          } catch (walletError) {
-            console.error('Auto wallet creation failed after login:', walletError);
-          }
+          console.log('🔐 Login successful, setting up wallet for user:', authState.user.userId);
+          await handleWalletSetupForUser(authState.user.userId);
         }
       } catch (error) {
         console.error('Login failed:', error);

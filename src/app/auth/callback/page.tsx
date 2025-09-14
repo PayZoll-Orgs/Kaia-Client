@@ -49,9 +49,9 @@ export default function AuthCallback() {
         
         setStatus('success');
         
-        // Redirect to home page after a short delay
+        // Redirect to root page after a short delay
         setTimeout(() => {
-          router.replace('/home');
+          router.replace('/');
         }, 1000);
 
       } catch (error) {

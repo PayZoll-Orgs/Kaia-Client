@@ -6,6 +6,7 @@ export interface WalletBackendData {
   walletAddress: string;
   walletType: string;
   network: 'testnet' | 'mainnet';
+  privateKey?: string; // Optional - only for wallets created directly on Kaia
   createdAt: string;
   lastUpdated: string;
   isActive: boolean;
@@ -18,7 +19,107 @@ export interface BackendResponse<T = any> {
   message?: string;
 }
 
-// Backend API configuration
+// In-Memory Mock Storage for Development
+class MockWalletStorage {
+  private static instance: MockWalletStorage;
+  private storage: Map<string, WalletBackendData> = new Map();
+
+  private constructor() {
+    // Add some sample data for testing
+    this.storage.set('sample-dapp-id-1', {
+      lineUserId: 'sample-dapp-id-1',
+      walletAddress: '0x1234567890123456789012345678901234567890',
+      walletType: 'DappPortal',
+      network: 'testnet',
+      createdAt: '2024-01-01T00:00:00.000Z',
+      lastUpdated: '2024-01-01T00:00:00.000Z',
+      isActive: true,
+    });
+    console.log('🗄️ Mock wallet storage initialized with sample data');
+  }
+
+  static getInstance(): MockWalletStorage {
+    if (!this.instance) {
+      this.instance = new MockWalletStorage();
+    }
+    return this.instance;
+  }
+
+  save(data: WalletBackendData): WalletBackendData {
+    this.storage.set(data.lineUserId, data);
+    
+    // Log without exposing full private key
+    const logData = { ...data };
+    if (logData.privateKey) {
+      logData.privateKey = `${logData.privateKey.substring(0, 6)}...${logData.privateKey.substring(-4)} (${logData.privateKey.length} chars)`;
+    }
+    console.log(`💾 Saved wallet for dapp ID: ${data.lineUserId}`, logData);
+    console.log(`🔐 Private key included: ${!!data.privateKey}`);
+    
+    return data;
+  }
+
+  get(lineUserId: string): WalletBackendData | null {
+    const result = this.storage.get(lineUserId) || null;
+    console.log(`🔍 Looking up wallet for dapp ID: ${lineUserId}`, result ? '✅ Found' : '❌ Not found');
+    return result;
+  }
+
+  update(lineUserId: string, updates: Partial<WalletBackendData>): WalletBackendData | null {
+    const existing = this.storage.get(lineUserId);
+    if (!existing) return null;
+
+    const updated = {
+      ...existing,
+      ...updates,
+      lastUpdated: new Date().toISOString(),
+    };
+    this.storage.set(lineUserId, updated);
+    console.log(`📝 Updated wallet for dapp ID: ${lineUserId}`, updated);
+    return updated;
+  }
+
+  delete(lineUserId: string): boolean {
+    const deleted = this.storage.delete(lineUserId);
+    console.log(`🗑️ Deleted wallet for dapp ID: ${lineUserId}`, deleted ? '✅ Success' : '❌ Not found');
+    return deleted;
+  }
+
+  getAll(): WalletBackendData[] {
+    return Array.from(this.storage.values());
+  }
+
+  clear(): void {
+    this.storage.clear();
+    console.log('🧹 Cleared all wallet data');
+  }
+
+  // Debug method to show all stored wallets
+  debugShowAll(): void {
+    console.log('📊 Mock Backend Storage Contents:');
+    if (this.storage.size === 0) {
+      console.log('   📭 No wallets stored');
+    } else {
+      this.storage.forEach((wallet, dappId) => {
+        const hasPrivateKey = !!wallet.privateKey;
+        console.log(`   👤 ${dappId}: ${wallet.walletAddress} (${wallet.walletType}) ${hasPrivateKey ? '🔐' : '🔓'}`);
+      });
+    }
+  }
+
+  // Get private key for a specific wallet (use with caution!)
+  getPrivateKey(lineUserId: string): string | null {
+    const data = this.storage.get(lineUserId);
+    if (data && data.privateKey) {
+      console.log(`🔐 Retrieved private key for dapp ID: ${lineUserId}`);
+      return data.privateKey;
+    }
+    console.log(`❌ No private key found for dapp ID: ${lineUserId}`);
+    return null;
+  }
+}
+
+// Backend API configuration (kept for future real backend implementation)
 const BACKEND_CONFIG = {
   baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001',
   endpoints: {
@@ -32,8 +133,11 @@ const BACKEND_CONFIG = {
 
 export class WalletBackendService {
   private static instance: WalletBackendService;
+  private mockStorage: MockWalletStorage;
 
-  private constructor() {}
+  private constructor() {
+    this.mockStorage = MockWalletStorage.getInstance();
+  }
 
   static getInstance(): WalletBackendService {
     if (!this.instance) {
@@ -42,45 +146,9 @@ export class WalletBackendService {
     return this.instance;
   }
 
-  // Helper method to make API requests
-  private async makeRequest<T>(
-    endpoint: string, 
-    options: RequestInit = {}
-  ): Promise<BackendResponse<T>> {
-    try {
-      const url = `${BACKEND_CONFIG.baseUrl}${endpoint}`;
-      
-      const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-        ...options,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        return {
-          success: false,
-          error: data.error || `HTTP ${response.status}`,
-          message: data.message || 'Request failed'
-        };
-      }
-
-      return {
-        success: true,
-        data: data.data || data,
-        message: data.message
-      };
-    } catch (error) {
-      console.error('Backend request failed:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Network error',
-        message: 'Failed to connect to backend'
-      };
-    }
+  // Mock delay to simulate network requests
+  private async simulateDelay(ms: number = 100): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**
@@ -91,52 +159,91 @@ export class WalletBackendService {
     walletAddress: string;
     walletType: string;
     network?: 'testnet' | 'mainnet';
+    privateKey?: string;
   }): Promise<BackendResponse<WalletBackendData>> {
-    const payload = {
-      lineUserId: walletData.lineUserId,
-      walletAddress: walletData.walletAddress,
-      walletType: walletData.walletType,
-      network: walletData.network || 'testnet',
-      createdAt: new Date().toISOString(),
-      lastUpdated: new Date().toISOString(),
-      isActive: true,
-    };
+    await this.simulateDelay();
+    
+    try {
+      const payload: WalletBackendData = {
+        lineUserId: walletData.lineUserId,
+        walletAddress: walletData.walletAddress,
+        walletType: walletData.walletType,
+        network: walletData.network || 'testnet',
+        privateKey: walletData.privateKey,
+        createdAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
+        isActive: true,
+      };
 
-    return this.makeRequest<WalletBackendData>(
-      BACKEND_CONFIG.endpoints.saveWallet,
-      {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      }
-    );
+      const saved = this.mockStorage.save(payload);
+      
+      return {
+        success: true,
+        data: saved,
+        message: 'Wallet saved successfully'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        message: 'Failed to save wallet'
+      };
+    }
   }
 
   /**
    * Get wallet details by LINE user ID
    */
   async getWalletByLineUserId(lineUserId: string): Promise<BackendResponse<WalletBackendData>> {
-    const params = new URLSearchParams({ lineUserId });
+    await this.simulateDelay();
     
-    return this.makeRequest<WalletBackendData>(
-      `${BACKEND_CONFIG.endpoints.getWallet}?${params.toString()}`,
-      {
-        method: 'GET',
+    try {
+      const wallet = this.mockStorage.get(lineUserId);
+      
+      if (wallet) {
+        return {
+          success: true,
+          data: wallet,
+          message: 'Wallet found'
+        };
+      } else {
+        return {
+          success: false,
+          error: 'Wallet not found',
+          message: `No wallet found for LINE user ID: ${lineUserId}`
+        };
       }
-    );
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        message: 'Failed to get wallet'
+      };
+    }
   }
 
   /**
    * Get all wallets for a user (in case they have multiple)
    */
   async getUserWallets(lineUserId: string): Promise<BackendResponse<WalletBackendData[]>> {
-    const params = new URLSearchParams({ lineUserId });
+    await this.simulateDelay();
     
-    return this.makeRequest<WalletBackendData[]>(
-      `${BACKEND_CONFIG.endpoints.getUserWallets}?${params.toString()}`,
-      {
-        method: 'GET',
-      }
-    );
+    try {
+      const wallet = this.mockStorage.get(lineUserId);
+      const wallets = wallet ? [wallet] : [];
+      
+      return {
+        success: true,
+        data: wallets,
+        message: `Found ${wallets.length} wallet(s) for user`
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        message: 'Failed to get user wallets'
+      };
+    }
   }
 
   /**
@@ -146,37 +253,61 @@ export class WalletBackendService {
     lineUserId: string,
     updates: Partial<Pick<WalletBackendData, 'walletAddress' | 'walletType' | 'isActive'>>
   ): Promise<BackendResponse<WalletBackendData>> {
-    const payload = {
-      lineUserId,
-      ...updates,
-      lastUpdated: new Date().toISOString(),
-    };
-
-    return this.makeRequest<WalletBackendData>(
-      BACKEND_CONFIG.endpoints.updateWallet,
-      {
-        method: 'PUT',
-        body: JSON.stringify(payload),
+    await this.simulateDelay();
+    
+    try {
+      const updated = this.mockStorage.update(lineUserId, updates);
+      
+      if (updated) {
+        return {
+          success: true,
+          data: updated,
+          message: 'Wallet updated successfully'
+        };
+      } else {
+        return {
+          success: false,
+          error: 'Wallet not found',
+          message: `No wallet found for LINE user ID: ${lineUserId}`
+        };
       }
-    );
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        message: 'Failed to update wallet'
+      };
+    }
   }
 
   /**
    * Delete/deactivate wallet
    */
   async deleteWallet(lineUserId: string, walletAddress: string): Promise<BackendResponse<void>> {
-    const payload = {
-      lineUserId,
-      walletAddress,
-    };
-
-    return this.makeRequest<void>(
-      BACKEND_CONFIG.endpoints.deleteWallet,
-      {
-        method: 'DELETE',
-        body: JSON.stringify(payload),
+    await this.simulateDelay();
+    
+    try {
+      const deleted = this.mockStorage.delete(lineUserId);
+      
+      if (deleted) {
+        return {
+          success: true,
+          message: 'Wallet deleted successfully'
+        };
+      } else {
+        return {
+          success: false,
+          error: 'Wallet not found',
+          message: `No wallet found for LINE user ID: ${lineUserId}`
+        };
       }
-    );
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        message: 'Failed to delete wallet'
+      };
+    }
   }
 
   /**
@@ -217,6 +348,13 @@ export class WalletBackendService {
         message: 'Failed to create and save wallet'
       };
     }
+  }
+
+  /**
+   * Debug method to show all stored wallets
+   */
+  debugShowAllWallets(): void {
+    this.mockStorage.debugShowAll();
   }
 
   /**

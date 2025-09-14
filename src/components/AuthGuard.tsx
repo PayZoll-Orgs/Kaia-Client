@@ -14,6 +14,7 @@ interface AuthGuardProps {
 const PUBLIC_ROUTES = [
   '/auth/callback',
   '/landing',
+  // Root path should show landing page for non-authenticated users
 ];
 
 export default function AuthGuard({ children }: AuthGuardProps) {

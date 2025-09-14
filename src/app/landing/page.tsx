@@ -1,7 +1,11 @@
 "use client";
 import Image from 'next/image';
-import GraffitiTitle from '@/components/GraffitiTitle';
 import Link from 'next/link';
+import { SlideButton } from '@/components/ui/slide-button';
+import { TextRotate } from '@/components/ui/text-rotate';
+import { SimpleTextRotate } from '@/components/ui/simple-text-rotate';
+import { LayoutGroup, motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 
 const QuestionSection = ({ number, question, children }: { number: string, question: string, children: React.ReactNode }) => {
   return (
@@ -13,7 +17,37 @@ const QuestionSection = ({ number, question, children }: { number: string, quest
   );
 };
 
+// Basic test component without any external dependencies
+const BasicTextRotate = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const texts = ["COMPLEXITY", "CONFUSION", "HEADACHE", "LEARNING", "SETUP"];
+  
+  useEffect(() => {
+    console.log('BasicTextRotate useEffect running');
+    const timer = setInterval(() => {
+      console.log('Timer tick, changing index');
+      setCurrentIndex((prev) => {
+        const newIndex = (prev + 1) % texts.length;
+        console.log(`Changing from ${prev} to ${newIndex}, text: ${texts[newIndex]}`);
+        return newIndex;
+      });
+    }, 1000);
+    return () => {
+      console.log('Cleaning up timer');
+      clearInterval(timer);
+    };
+  }, []);
+  
+  console.log(`Rendering BasicTextRotate, currentIndex: ${currentIndex}, text: ${texts[currentIndex]}`);
+  return <span>{texts[currentIndex]} (Index: {currentIndex})</span>;
+};
+
 export default function LandingPage() {
+  const handleGetStarted = () => {
+    // Handle get started action - could scroll to features or show more info
+    console.log('Get Started clicked');
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
@@ -60,26 +94,46 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-left">
             <h2 className="text-2xl font-medium text-green-600 mb-8">
-              Seamless Payments
+              LINE-Powered Crypto Payments
             </h2>
             <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold text-black leading-tight mb-8">
-              SEND MONEY<br />
-              LIKE SENDING<br />
-              <span className="flex gap-1.5">
-              A <div className="bg-white mt-1 ml-0.5 h-[0.9em] p-2 relative overflow-hidden">
-                <div className="absolute inset-0 bg-black animate-fill-bar"></div>
-                <div className="relative z-10 opacity-0 animate-fade-in-delayed">
-                  <GraffitiTitle />
-                </div>
-              </div>
-              </span>
-             
+              <LayoutGroup>
+                <motion.div className="flex flex-col" layout>
+                  <motion.span layout transition={{ type: "spring", damping: 30, stiffness: 400 }}>
+                    CRYPTO<br />
+                    WITHOUT THE<br />
+                  </motion.span>
+                  <motion.div className="flex items-center gap-4" layout>
+                    {/* Debug: Simple text that should definitely show */}
+                    <div className="text-white px-4 sm:px-6 md:px-8 bg-red-500 py-2 sm:py-3 md:py-4 rounded-2xl">
+                      DEBUG TEST
+                    </div>
+                    
+                    {/* Test 1: Static text */}
+                    <div className="text-white px-4 bg-green-500 py-2 rounded-2xl">
+                      STATIC TEST
+                    </div>
+                    
+                    {/* Test 2: Basic React state without animation */}
+                    <div className="text-white px-4 bg-blue-500 py-2 rounded-2xl">
+                      <BasicTextRotate />
+                    </div>
+                    
+                    <div className="flex items-center justify-center">
+                      <SlideButton />
+                    </div>
+                  </motion.div>
+                </motion.div>
+              </LayoutGroup>
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mb-8">
-              Experience the future of digital payments. Split bills, send bulk payments, and manage transactions with ease.
+              Pay your LINE friends with crypto. Split bills, scan QR codes, and manage transactions on the Kaia blockchain.
             </p>
             <div className="flex gap-4">
-              <button className="bg-green-500 text-white px-8 py-4 rounded-full hover:bg-green-600 transition-colors">
+              <button 
+                onClick={handleGetStarted}
+                className="bg-green-500 text-white px-8 py-4 rounded-full hover:bg-green-600 transition-colors"
+              >
                 Get Started
               </button>
               <button className="border-2 border-black px-8 py-4 rounded-full hover:bg-gray-50 transition-colors">
@@ -100,9 +154,9 @@ export default function LandingPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-4">Split Bills Easily</h3>
+              <h3 className="text-xl font-bold mb-4">Split Bills with Crypto</h3>
               <p className="text-gray-600">
-                Split expenses with friends and family. Equal splits or custom amounts - you choose how to divide.
+                Split expenses with your LINE friends using cryptocurrency. Equal splits or custom amounts with blockchain precision.
               </p>
             </div>
 
@@ -112,9 +166,9 @@ export default function LandingPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-2 0h-2m-4 0H8m-4 0h2m6 0v1m-6-1v1m12-2v1m-6-1v1m-6-1v1m12-2v1m-6-1v1m-6-1v1m12-2v1m-6-1v1m-6-1v1m12-2v1m-6-1v1m-6-1v1" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-4">Bulk Payments</h3>
+              <h3 className="text-xl font-bold mb-4">LINE Integration</h3>
               <p className="text-gray-600">
-                Send payments to multiple recipients in one go. Perfect for business payouts or group reimbursements.
+                Pay your LINE friends directly. Access your contacts and send crypto payments as easily as sending messages.
               </p>
             </div>
 
@@ -124,9 +178,9 @@ export default function LandingPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-4">Secure Transactions</h3>
+              <h3 className="text-xl font-bold mb-4">QR Code Payments</h3>
               <p className="text-gray-600">
-                Built on blockchain technology for secure, transparent, and instant transactions.
+                Scan QR codes for instant payments. Generate your own QR codes to receive payments from anyone, anywhere.
               </p>
             </div>
           </div>
@@ -142,36 +196,36 @@ export default function LandingPage() {
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl font-bold text-green-600">1</span>
               </div>
-              <h3 className="text-xl font-bold mb-4">Connect Wallet</h3>
+              <h3 className="text-xl font-bold mb-4">Connect via LINE</h3>
               <p className="text-gray-600">
-                Link your digital wallet to access all features securely
+                Sign in with your LINE account to access crypto payments and wallet features
               </p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl font-bold text-green-600">2</span>
               </div>
-              <h3 className="text-xl font-bold mb-4">Choose Recipients</h3>
+              <h3 className="text-xl font-bold mb-4">Scan QR or Add Friends</h3>
               <p className="text-gray-600">
-                Select friends or scan QR codes to add payment recipients
+                Select LINE friends or scan QR codes to add payment recipients instantly
               </p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl font-bold text-green-600">3</span>
               </div>
-              <h3 className="text-xl font-bold mb-4">Enter Amount</h3>
+              <h3 className="text-xl font-bold mb-4">Split or Send Crypto</h3>
               <p className="text-gray-600">
-                Specify payment amounts or split bills automatically
+                Specify payment amounts, split bills equally, or send bulk payments with crypto precision
               </p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl font-bold text-green-600">4</span>
               </div>
-              <h3 className="text-xl font-bold mb-4">Confirm & Send</h3>
+              <h3 className="text-xl font-bold mb-4">Instant on Kaia Network</h3>
               <p className="text-gray-600">
-                Review and confirm your transaction securely
+                Review and confirm - transactions process instantly on the Kaia blockchain
               </p>
             </div>
           </div>
@@ -185,7 +239,7 @@ export default function LandingPage() {
             <div>
               <h2 className="text-4xl md:text-5xl font-bold mb-8">
                 Why Choose Our<br />
-                Payment Platform?
+                LINE Crypto Platform?
               </h2>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
@@ -195,9 +249,9 @@ export default function LandingPage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2">Lightning Fast</h3>
+                    <h3 className="text-xl font-bold mb-2">Kaia Network Speed</h3>
                     <p className="text-gray-400">
-                      Instant transactions with minimal fees. No more waiting for bank transfers.
+                      Instant transactions on Kaia testnet with minimal fees. No more waiting for traditional transfers.
                     </p>
                   </div>
                 </div>
@@ -208,9 +262,9 @@ export default function LandingPage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2">Group Friendly</h3>
+                    <h3 className="text-xl font-bold mb-2">LINE Friends Integration</h3>
                     <p className="text-gray-400">
-                      Split bills and send bulk payments with just a few taps.
+                      Pay your LINE friends directly and split bills with your existing social network.
                     </p>
                   </div>
                 </div>
@@ -221,9 +275,9 @@ export default function LandingPage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-2">Blockchain Secure</h3>
+                    <h3 className="text-xl font-bold mb-2">Kaia Blockchain Powered</h3>
                     <p className="text-gray-400">
-                      Built on secure blockchain technology for transparent and safe transactions.
+                      Built on the secure Kaia blockchain for transparent, fast, and safe crypto transactions.
                     </p>
                   </div>
                 </div>
@@ -255,10 +309,13 @@ export default function LandingPage() {
             Ready to Get Started?
           </h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Join thousands of users who are already enjoying seamless digital payments.
+            Join thousands of LINE users who are already enjoying seamless crypto payments with their friends.
           </p>
           <div className="flex gap-4 justify-center">
-            <button className="bg-green-500 text-white px-8 py-4 rounded-full hover:bg-green-600 transition-colors">
+            <button 
+              onClick={handleGetStarted}
+              className="bg-green-500 text-white px-8 py-4 rounded-full hover:bg-green-600 transition-colors"
+            >
               Create Account
             </button>
             <button className="border-2 border-black px-8 py-4 rounded-full hover:bg-gray-50 transition-colors">
@@ -276,10 +333,10 @@ export default function LandingPage() {
               <h2 className="text-4xl md:text-5xl font-bold mb-4">Stay up to date</h2>
               <h3 className="text-6xl md:text-7xl font-bold mb-8">
                 NEVER MISS<br />
-                WHAT'S NEXT
+                WHAT&apos;S NEXT
               </h3>
               <p className="text-xl text-gray-700">
-                Sign up for the latest news, events, and more from the Stellar network.
+                Sign up for the latest news, updates, and features from our LINE crypto platform.
               </p>
             </div>
             <div>
@@ -288,8 +345,8 @@ export default function LandingPage() {
                   <label className="flex items-center space-x-3">
                     <input type="checkbox" className="h-5 w-5 rounded border-gray-300" />
                     <span>
-                      <div className="font-medium">Stellar newsletter</div>
-                      <div className="text-gray-600">Receive monthly updates about Stellar news, partnerships, and resources.</div>
+                      <div className="font-medium">Platform newsletter</div>
+                      <div className="text-gray-600">Receive monthly updates about new features, LINE integrations, and crypto payment news.</div>
                     </span>
                   </label>
                 </div>
@@ -298,7 +355,7 @@ export default function LandingPage() {
                     <input type="checkbox" className="h-5 w-5 rounded border-gray-300" />
                     <span>
                       <div className="font-medium">Developer newsletter</div>
-                      <div className="text-gray-600">Get technical updates and resources for building on Stellar.</div>
+                      <div className="text-gray-600">Get technical updates and resources for building with LINE and Kaia blockchain.</div>
                     </span>
                   </label>
                 </div>
@@ -334,18 +391,18 @@ export default function LandingPage() {
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-4">THE STELLAR NETWORK</h4>
+              <h4 className="font-bold mb-4">THE KAIA NETWORK</h4>
               <ul className="space-y-2">
                 <li><Link href="/ecosystem">Ecosystem Projects</Link></li>
-                <li><Link href="/learn">Learn</Link></li>
+                <li><Link href="/learn">Learn Crypto</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold mb-4">DEVELOPERS</h4>
               <ul className="space-y-2">
-                <li><Link href="/docs">Stellar Network Docs</Link></li>
+                <li><Link href="/docs">Kaia Network Docs</Link></li>
                 <li><Link href="/api">API Reference</Link></li>
-                <li><Link href="/bug-bounty">Bug Bounty</Link></li>
+                <li><Link href="/line-integration">LINE Integration</Link></li>
               </ul>
             </div>
             <div>
@@ -363,7 +420,7 @@ export default function LandingPage() {
                 <Link href="/privacy">Privacy Policy</Link>
                 <Link href="/terms">Terms of Service</Link>
               </div>
-              <div>© 2025 Stellar Development Foundation</div>
+              <div>© 2025 LINE Crypto Payment Platform</div>
             </div>
           </div>
         </div>
