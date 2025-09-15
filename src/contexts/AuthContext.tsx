@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { LineAuth, AuthState, LineUser, LineFriend } from '@/lib/line-auth';
 import { WalletService, WalletState } from '@/lib/wallet-service';
 import { getWalletBackendService } from '@/lib/wallet-backend';
@@ -37,6 +37,9 @@ interface AuthContextType {
   
   // Onboarding Actions
   completeOnboarding: () => void;
+  
+  // OAuth Callback
+  handleOAuthCallback: (code: string, state: string) => Promise<void>;
 }
 
 // Create context
@@ -77,7 +80,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const backendService = getWalletBackendService();
 
   // Check if user has existing wallet in backend and determine if onboarding is needed
-  const checkExistingWallet = async (lineUserId: string) => {
+  const checkExistingWallet = useCallback(async (lineUserId: string) => {
     try {
       console.log('🔍 Checking backend for existing wallet for dapp ID:', lineUserId);
       
@@ -100,7 +103,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setNeedsOnboarding(true); // Default to onboarding if check fails
       return null;
     }
-  };
+  }, [backendService]);
 
   // Save wallet to backend after user connects/creates it
   const saveWalletToBackend = async (lineUserId: string, walletAddress: string) => {
@@ -164,7 +167,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       unsubscribeAuth();
       unsubscribeWallet();
     };
-  }, [lineAuth, walletService]);
+  }, [lineAuth, walletService, authState.isAuthenticated, authState.user?.userId, checkExistingWallet]);
 
   // Complete onboarding (called after wallet is set up)
   const completeOnboarding = () => {
@@ -294,6 +297,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     
     // Onboarding Actions
     completeOnboarding,
+    
+    // OAuth Callback
+    handleOAuthCallback: async (code: string, state: string) => {
+      if (!lineAuth) return;
+      await lineAuth.handleOAuthCallback(code, state);
+    },
   };
 
   return (
@@ -316,11 +325,9 @@ export function useAuth(): AuthContextType {
 
 // Hook to handle OAuth callback
 export function useAuthCallback() {
-  const lineAuth = LineAuth.getInstance();
+  const { handleOAuthCallback } = useAuth();
   
   return {
-    handleCallback: async (code: string, state: string) => {
-      await lineAuth.handleOAuthCallback(code, state);
-    },
+    handleCallback: handleOAuthCallback,
   };
 }

@@ -2,25 +2,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { SlideButton } from '@/components/ui/slide-button';
-import { TextRotate } from '@/components/ui/text-rotate';
-import { SimpleTextRotate } from '@/components/ui/simple-text-rotate';
 import { LayoutGroup, motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
-
-const QuestionSection = ({ number, question, children }: { number: string, question: string, children: React.ReactNode }) => {
-  return (
-    <div className="bg-black text-white p-8 rounded-2xl">
-      <div className="mb-4 text-lg">{number}</div>
-      <h3 className="text-2xl md:text-3xl mb-6">{question}</h3>
-      {children}
-    </div>
-  );
-};
+import { useState, useEffect, useMemo } from 'react';
 
 // Basic test component without any external dependencies
 const BasicTextRotate = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const texts = ["COMPLEXITY", "CONFUSION", "HEADACHE", "LEARNING", "SETUP"];
+  const texts = useMemo(() => ["COMPLEXITY", "CONFUSION", "HEADACHE", "LEARNING", "SETUP"], []);
   
   useEffect(() => {
     console.log('BasicTextRotate useEffect running');
@@ -36,7 +24,7 @@ const BasicTextRotate = () => {
       console.log('Cleaning up timer');
       clearInterval(timer);
     };
-  }, []);
+  }, [texts]);
   
   console.log(`Rendering BasicTextRotate, currentIndex: ${currentIndex}, text: ${texts[currentIndex]}`);
   return <span>{texts[currentIndex]} (Index: {currentIndex})</span>;

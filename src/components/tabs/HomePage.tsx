@@ -1,14 +1,22 @@
 "use client";
-import Image from "next/image";
 import { useState } from "react";
 import { QrCodeIcon, UserIcon, ShareIcon, DocumentDuplicateIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/contexts/AuthContext";
+import { LineFriend } from "@/lib/line-auth";
 import LIFFQRScanner from "@/components/LIFFQRScanner";
 import PayAnyonePopup from "@/components/PayAnyonePopup";
 import PastInteractionPopup from "@/components/PastInteractionPopup";
 import SplitBillPopup from "@/components/SplitBillPopup";
 import BulkPaymentPopup from "@/components/BulkPaymentPopup";
 import FriendsPopup from "@/components/FriendsPopup";
+
+interface Contact {
+  id: string;
+  name: string;
+  walletAddress: string;
+  profilePhoto: string;
+  phoneNumber: string;
+}
 
 interface HomePageProps {
   onTabChange?: (tab: 'home' | 'history' | 'portfolio') => void;
@@ -23,36 +31,52 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
   const [showBulkPayment, setShowBulkPayment] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [selectedContact, setSelectedContact] = useState<any>(null);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [notifications] = useState(3); // Mock notification count
+
+  // Convert LineFriend to Contact
+  const convertLineFriendToContact = (friend: LineFriend): Contact => ({
+    id: friend.userId,
+    name: friend.displayName,
+    walletAddress: '', // This would need to be fetched from the backend
+    profilePhoto: friend.pictureUrl || '',
+    phoneNumber: '', // Not available from LINE friend data
+  });
 
   const handleQRScan = (result: string) => {
     console.log("QR Code scanned:", result);
     // Handle the scanned QR code (blockchain address)
   };
 
-  const handleContactSelect = (contact: any) => {
+  const handleContactSelect = (contact: Contact) => {
     setSelectedContact(contact);
     setShowPayAnyone(false);
     setShowPastInteraction(true);
   };
 
-  const handlePay = (contact: any) => {
+  const handleFriendSelect = (friend: LineFriend) => {
+    const contact = convertLineFriendToContact(friend);
+    setSelectedContact(contact);
+    setShowFriends(false);
+    setShowPastInteraction(true);
+  };
+
+  const handlePay = (contact: Contact) => {
     console.log("Pay to:", contact);
     // Handle payment logic
   };
 
-  const handleRequest = (contact: any) => {
+  const handleRequest = (contact: Contact) => {
     console.log("Request from:", contact);
     // Handle request logic
   };
 
-  const handleSplitBill = (contacts: any[], totalAmount: number) => {
+  const handleSplitBill = (contacts: Contact[], totalAmount: number) => {
     console.log("Split bill:", contacts, totalAmount);
     // Handle split bill logic
   };
 
-  const handleBulkPayment = (contacts: any[], totalAmount: number) => {
+  const handleBulkPayment = (contacts: Contact[], totalAmount: number) => {
     console.log("Bulk payment:", contacts, totalAmount);
     // Handle bulk payment logic
   };
@@ -71,7 +95,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
 
   const handleDownloadQR = () => {
     // Generate QR code and download
-    const qrCodeData = `ethereum:${userWalletAddress}`;
+    // const qrCodeData = `ethereum:${userWalletAddress}`; // TODO: Use this when implementing real QR generation
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
@@ -147,7 +171,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
         {/* Greeting */}
         <div className="px-6 mb-4">
           <h1 className="text-2xl font-semibold text-gray-900 mb-1">Hello {user?.displayName || 'User'}!</h1>
-          <p className="text-gray-500">Let's save your money.</p>
+          <p className="text-gray-500">Let&apos;s save your money.</p>
         </div>
       </header>
 
@@ -336,7 +360,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
       <FriendsPopup
         isOpen={showFriends}
         onClose={() => setShowFriends(false)}
-        onSelectContact={handleContactSelect}
+        onSelectContact={handleFriendSelect}
         friends={friends}
       />
 

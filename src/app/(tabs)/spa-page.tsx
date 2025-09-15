@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from 'react';
 import { HomeIcon, ClockIcon, UserCircleIcon } from "@heroicons/react/24/outline";
-import { useAuth } from "@/contexts/AuthContext";
 
 // Import tab components
 import HomePage from '@/components/tabs/HomePage';
@@ -13,7 +12,6 @@ type TabType = 'home' | 'history' | 'portfolio';
 export default function SPAPage() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const { user } = useAuth();
 
   const renderContent = () => {
     switch (activeTab) {

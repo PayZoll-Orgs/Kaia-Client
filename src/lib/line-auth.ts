@@ -140,7 +140,7 @@ export class LIFFAuth {
   static logout(): void {
     try {
       liff.logout();
-    } catch (error) {
+    } catch {
       // Silent fail for logout
     }
   }
@@ -149,11 +149,12 @@ export class LIFFAuth {
     try {
       const result = await liff.scanCodeV2();
       return result?.value || null;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('LIFF QR scan error:', error);
       
       // Handle user cancellation gracefully
-      if (error.code === 'CANCEL') {
+      const err = error as { code?: string };
+      if (err.code === 'CANCEL') {
         return null;
       }
       
@@ -228,10 +229,10 @@ export class OAuthAuth {
 
       if (!response.ok) {
         const errorText = await response.text();
-        let errorData: any = {};
+        let errorData: { error?: string; error_description?: string } = {};
         try {
           errorData = JSON.parse(errorText);
-        } catch (e) {
+        } catch {
           // Failed to parse error response
         }
         
@@ -292,13 +293,13 @@ export class OAuthAuth {
       const friendsData = await response.json();
       
       // Transform the response to our LineFriend interface
-      return friendsData.friends?.map((friend: any) => ({
+      return friendsData.friends?.map((friend: LineFriend) => ({
         userId: friend.userId,
         displayName: friend.displayName,
         pictureUrl: friend.pictureUrl,
         statusMessage: friend.statusMessage,
       })) || [];
-    } catch (error) {
+    } catch {
       // Return empty array on error instead of throwing
       return [];
     }

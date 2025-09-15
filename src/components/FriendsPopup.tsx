@@ -6,7 +6,7 @@ import { LineFriend } from "@/lib/line-auth";
 interface FriendsPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectContact: (contact: any) => void;
+  onSelectContact: (contact: LineFriend) => void;
   friends: LineFriend[];
 }
 
@@ -17,7 +17,7 @@ export default function FriendsPopup({ isOpen, onClose, onSelectContact, friends
     friend.displayName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleFriendClick = (friend: any) => {
+  const handleFriendClick = (friend: LineFriend) => {
     onSelectContact(friend);
   };
 

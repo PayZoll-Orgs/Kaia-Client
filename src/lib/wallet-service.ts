@@ -1,7 +1,15 @@
 // LINE DappPortal Wallet Service for Kaia Testnet
 // This service handles wallet operations using LINE's DappPortal SDK
 // Wallet creation happens through DappPortal UI when user connects
-import DappPortalSDK from '@linenext/dapp-portal-sdk';
+
+// Dynamic import to handle SSR issues
+let DappPortalSDK: typeof import('@linenext/dapp-portal-sdk').default | null = null;
+if (typeof window !== 'undefined') {
+  // Only import on client-side
+  import('@linenext/dapp-portal-sdk').then((module) => {
+    DappPortalSDK = module.default;
+  }).catch(console.error);
+}
 
 export interface WalletState {
   isConnected: boolean;
@@ -39,16 +47,21 @@ export const KAIA_TESTNET_CONFIG = {
 export const TESTNET_USDT_CONTRACT = '0xd077a400968890eacc75cdc901f0356c943e4fdb';
 
 // DappPortal SDK types
+interface DappPortalSDK {
+  getWalletProvider(): WalletProvider;
+  // Add other SDK methods as needed
+}
+
 interface WalletProvider {
   getWalletType(): WalletType;
-  request(args: { method: string; params?: any[] }): Promise<any>;
+  request(args: { method: string; params?: unknown[] }): Promise<unknown>;
   disconnectWallet(): Promise<void>;
   getErc20TokenBalance(contractAddress: string, account: string): Promise<string>;
 }
 
 export class WalletService {
   private static instance: WalletService;
-  private static sdkInstance: any = null; // Singleton DappPortal SDK instance
+  private static sdkInstance: unknown = null; // Singleton DappPortal SDK instance
   private static sdkInitialized: boolean = false;
   private walletProvider: WalletProvider | null = null;
   private walletState: WalletState = {
@@ -71,10 +84,15 @@ export class WalletService {
   }
 
   // Singleton SDK initialization - called only once per application lifecycle
-  private static async initializeDappPortalSDK(): Promise<any> {
+  private static async initializeDappPortalSDK(): Promise<DappPortalSDK> {
     if (this.sdkInitialized && this.sdkInstance) {
       console.log('🔄 Using existing DappPortal SDK singleton instance');
-      return this.sdkInstance;
+      return this.sdkInstance as DappPortalSDK;
+    }
+
+    // Ensure we're on the client side
+    if (typeof window === 'undefined') {
+      throw new Error('DappPortal SDK can only be initialized on the client side');
     }
 
     console.log('🚀 Initializing DappPortal SDK singleton for Kaia testnet...');
@@ -94,6 +112,12 @@ export class WalletService {
     }
 
     try {
+      // Dynamic import the SDK module
+      if (!DappPortalSDK) {
+        const { default: SDK } = await import('@linenext/dapp-portal-sdk');
+        DappPortalSDK = SDK;
+      }
+
       this.sdkInstance = await DappPortalSDK.init({
         clientId: clientId!,
         chainId: '1001' // '1001' for testnet
@@ -104,9 +128,26 @@ export class WalletService {
       console.log('🔍 SDK instance:', !!this.sdkInstance);
       console.log('🔍 SDK methods available:', Object.getOwnPropertyNames(this.sdkInstance));
 
-      return this.sdkInstance;
+      return this.sdkInstance as DappPortalSDK;
     } catch (error) {
       console.error('❌ DappPortal SDK singleton initialization failed:', error);
+      console.error('🔍 Error details:');
+      console.error('  - Error type:', typeof error);
+      console.error('  - Error message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('  - Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      
+      // Check for specific DApp Portal errors
+      if (error instanceof Error) {
+        if (error.message.includes('CLIENT_ID not authorized')) {
+          console.error('🚫 AUTHORIZATION ERROR: Your DApp Portal CLIENT_ID is not authorized for wallet operations');
+          console.error('📋 SOLUTION: Check your LINE Next DApp Portal registration');
+          console.error('   1. Go to: https://dapp-portal.line.me/');
+          console.error('   2. Verify CLIENT_ID:', clientId);
+          console.error('   3. Ensure Kaia testnet is enabled');
+          console.error('   4. Check wallet operations permissions');
+        }
+      }
+      
       this.sdkInitialized = false;
       this.sdkInstance = null;
       throw error;
@@ -121,7 +162,7 @@ export class WalletService {
   }
 
   // Get current SDK instance (read-only)
-  static getSDKInstance(): any | null {
+  static getSDKInstance(): unknown | null {
     return this.sdkInstance;
   }
 
@@ -196,7 +237,7 @@ export class WalletService {
           console.log('ℹ️ No existing wallet connection found');
           this.updateState({ isLoading: false });
         }
-      } catch (error) {
+      } catch {
         // No wallet connected yet, which is fine
         console.log('ℹ️ No wallet connected yet');
         this.updateState({ isLoading: false });
@@ -300,7 +341,7 @@ export class WalletService {
 
     try {
       // Check if we're on Kaia testnet (Kairos)
-      const klaytn = (window as any).klaytn;
+      const klaytn = (window as Window & { klaytn?: { networkVersion: string } }).klaytn;
       if (klaytn && klaytn.networkVersion) {
         const networkVersion = klaytn.networkVersion;
         if (networkVersion !== '1001') {
@@ -542,7 +583,7 @@ export class WalletService {
 
   // SDK LIMITATION: Cannot retrieve wallet by LINE user ID
   // This method explains why we need backend storage
-  async getWalletByLineUserId(lineUserId: string): Promise<{
+  async getWalletByLineUserId(_lineUserId: string): Promise<{
     address: string | null;
     walletType: WalletType | null;
     source?: 'current' | 'none';

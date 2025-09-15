@@ -10,11 +10,16 @@ export interface DappPortalUserWallet {
   isActive: boolean;
 }
 
-export interface DappPortalResponse<T = any> {
+export interface DappPortalResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
   message?: string;
+}
+
+interface WalletData {
+  walletAddress: string;
+  walletType: string;
 }
 
 // DappPortal API configuration (hypothetical - needs to be verified with actual documentation)
@@ -167,12 +172,18 @@ export class DappPortalAPI {
   }
 }
 
+// Basic interface for backend service (to avoid circular imports)
+interface BackendService {
+  getWalletByLineUserId(lineUserId: string): Promise<DappPortalResponse<WalletData>>;
+  syncWalletData(lineUserId: string, walletAddress: string, dappPortalData: unknown): Promise<DappPortalResponse>;
+}
+
 // Enhanced wallet service integration
 export class EnhancedWalletRetrieval {
   private dappPortalAPI: DappPortalAPI;
-  private backendService: any; // WalletBackendService
+  private backendService: BackendService;
 
-  constructor(backendService: any) {
+  constructor(backendService: BackendService) {
     this.dappPortalAPI = DappPortalAPI.getInstance();
     this.backendService = backendService;
   }

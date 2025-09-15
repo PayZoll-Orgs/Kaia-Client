@@ -35,13 +35,14 @@ export default function LIFFQRScanner({ isOpen, onClose, onScan }: LIFFQRScanner
         // User cancelled or no result
         onClose();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('LIFF QR scan error:', error);
       
       // Handle different error cases
-      if (error.code === 'UNAUTHORIZED') {
+      const err = error as { code?: string };
+      if (err.code === 'UNAUTHORIZED') {
         setError("Camera permission denied");
-      } else if (error.code === 'INTERNAL_ERROR') {
+      } else if (err.code === 'INTERNAL_ERROR') {
         setError("QR scanning failed. Please try again.");
       } else {
         setError("Failed to scan QR code");
@@ -105,7 +106,7 @@ export default function LIFFQRScanner({ isOpen, onClose, onScan }: LIFFQRScanner
                       </div>
                       
                       <p className="text-gray-600 mb-6">
-                        Tap the button below to open LINE's QR code scanner
+                        Tap the button below to open LINE&apos;s QR code scanner
                       </p>
 
                       <button

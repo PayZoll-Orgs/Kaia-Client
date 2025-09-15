@@ -1,11 +1,19 @@
 "use client";
-import Image from "next/image";
 import { useState, useCallback } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { QrCodeIcon, ShareIcon, DocumentDuplicateIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/contexts/AuthContext";
 import SwitchAccountPopup from "@/components/SwitchAccountPopup";
 import WalletConnect from "@/components/WalletConnect";
+
+interface Account {
+  id: string;
+  name: string;
+  network: string;
+  balance: string;
+  address: string;
+  isActive: boolean;
+}
 
 export default function PortfolioPage() {
   const { user, logout, wallet } = useAuth();
@@ -39,7 +47,7 @@ export default function PortfolioPage() {
     }
   ]);
 
-  const handleAccountSwitch = useCallback((account: any) => {
+  const handleAccountSwitch = useCallback((account: Account) => {
     console.log('Switching to account:', account);
     // Handle account switch logic here
   }, []);
@@ -55,8 +63,8 @@ export default function PortfolioPage() {
   };
 
   const handleDownloadQR = () => {
-    const addressForQR = wallet.address || "0x1234567890abcdef1234567890abcdef12345678";
-    const qrCodeData = `ethereum:${addressForQR}`;
+    // const addressForQR = wallet.address || "0x1234567890abcdef1234567890abcdef12345678"; // TODO: Use this when implementing real QR generation
+    // const qrCodeData = `ethereum:${addressForQR}`; // TODO: Use this when implementing real QR generation
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
@@ -131,7 +139,7 @@ export default function PortfolioPage() {
           <h1 className="text-2xl font-semibold text-gray-900 mb-1">
             Hello {user?.displayName || 'User'}!
           </h1>
-          <p className="text-gray-500">Let's manage your crypto wallet.</p>
+          <p className="text-gray-500">Let&apos;s manage your crypto wallet.</p>
         </div>
 
         {/* Wallet Connection */}
@@ -429,20 +437,6 @@ export default function PortfolioPage() {
       )}
     </main>
   );
-}
-
-function AssetCard({ symbol, amount, usd }: { symbol: string; amount: string; usd: string }) {
-  return (
-    <div className="rounded-2xl border border-green-100 p-4">
-      <div className="text-sm font-medium">{symbol}</div>
-      <div className="text-xs text-gray-600">{amount}</div>
-      <div className="text-sm mt-1">{usd}</div>
-    </div>
-  );
-}
-
-function short(addr: string) {
-  return addr.slice(0, 6) + "..." + addr.slice(-4);
 }
 
 

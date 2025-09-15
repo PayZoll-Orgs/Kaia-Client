@@ -12,14 +12,17 @@ export default function QRScanner({ onResult }: QRScannerProps) {
   return (
     <div className="rounded-2xl overflow-hidden bg-black/5">
       <Scanner
-        onResult={(result) => {
-          if (result?.[0]?.rawValue) {
-            onResult(result[0].rawValue);
+        onScan={(detectedCodes: unknown) => {
+          const resultArray = detectedCodes as Array<{ rawValue: string }>;
+          if (resultArray?.[0]?.rawValue) {
+            onResult(resultArray[0].rawValue);
           }
         }}
-        onError={(err) => setError(err?.message || "Camera error")}
+        onError={(error: unknown) => {
+          const err = error as Error;
+          setError(err?.message || "Camera error");
+        }}
         components={{
-          audio: false,
           torch: true,
           zoom: true,
         }}

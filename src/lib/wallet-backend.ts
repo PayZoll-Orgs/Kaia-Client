@@ -12,7 +12,7 @@ export interface WalletBackendData {
   isActive: boolean;
 }
 
-export interface BackendResponse<T = any> {
+export interface BackendResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -120,6 +120,7 @@ class MockWalletStorage {
 }
 
 // Backend API configuration (kept for future real backend implementation)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const BACKEND_CONFIG = {
   baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001',
   endpoints: {
@@ -283,7 +284,7 @@ export class WalletBackendService {
   /**
    * Delete/deactivate wallet
    */
-  async deleteWallet(lineUserId: string, walletAddress: string): Promise<BackendResponse<void>> {
+  async deleteWallet(lineUserId: string, _walletAddress: string): Promise<BackendResponse<void>> {
     await this.simulateDelay();
     
     try {
