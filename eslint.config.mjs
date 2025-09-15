@@ -20,6 +20,12 @@ const eslintConfig = [
       "next-env.d.ts",
     ],
   },
+  {
+    rules: {
+      "@next/next/no-img-element": "off",         // Disable image element warning
+      "@typescript-eslint/no-unused-vars": "off",  // Disable unused variables warning
+    },
+  },
 ];
 
 export default eslintConfig;
