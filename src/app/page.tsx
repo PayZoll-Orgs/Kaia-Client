@@ -1,21 +1,23 @@
 "use client";
-import { useAuth } from "@/contexts/AuthContext";
-import SPAApp from "@/components/SPAApp";
-import LandingPage from "@/app/landing/page";
-import LoadingScreen from "@/components/LoadingScreen";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
 
-  // Show loading while checking authentication
-  if (isLoading) {
-    return <LoadingScreen message="Loading..." />;
-  }
+  useEffect(() => {
+    // Redirect to landing page
+    router.push("/landing");
+  }, [router]);
 
-  // Show SPA for authenticated users, Landing page for non-authenticated
-  if (isAuthenticated) {
-    return <SPAApp />;
-  } else {
-    return <LandingPage />;
-  }
+  return (
+    <div className="min-h-screen bg-[#FEFEFE] flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-10 h-10 rounded-lg bg-black flex items-center justify-center mx-auto mb-4"> 
+          <span className="font-bold text-white">Z</span>
+        </div>
+        <p className="text-lg">Redirecting to ZenCrypto...</p>
+      </div>
+    </div>
+  );
 }
