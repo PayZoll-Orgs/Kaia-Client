@@ -431,7 +431,7 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
           </button>
           <button
             onClick={handleSave}
-            disabled={isLoading || !profileData.username?.trim() || userIdAvailability !== 'available'}
+            
             className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {isLoading ? (
