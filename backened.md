@@ -1,50 +1,43 @@
-# PayZoll Backend API Documentation
-
-## Base URL
-```
+PayZoll Backend API Documentation
+Base URL
 https://kaia-server.onrender.com/
-```
+Database Schema
+User Schema
 
-## Database Schema
-
-### User Schema
-```javascript
+JavaScript
 {
-  userId: String (required, unique),        // Your app user ID
+  username: String (required, unique),        // Your app username
   displayName: String (required),           // User's display name
   pictureUrl: String (optional),            // Profile picture URL
   statusMessage: String (optional),         // User status message
   walletAddress: String (required),         // Crypto wallet address
-  lineUserId: String (required)             // LINE user ID for notifications
+  userId: String (required)             // LINE user ID for notifications
 }
-```
+P2P Transaction Schema
 
-### P2P Transaction Schema
-```javascript
+JavaScript
 {
-  senderId: String (required),              // Sender's userId
-  receiverId: String (required),            // Receiver's userId
+  senderId: String (required),              // Sender's username
+  receiverId: String (required),            // Receiver's username
   amount: Number (required),                // Transaction amount
   transactionHash: String (required),       // Blockchain transaction hash
   status: String (required),                // Transaction status
   createdAt: Date (auto)                    // Transaction timestamp
 }
-```
+Bulk Payment Schema
 
-### Bulk Payment Schema
-```javascript
+JavaScript
 {
-  senderId: String (required),              // Sender's userId
-  receiverIds: [String] (required),         // Array of receiver userIds
+  senderId: String (required),              // Sender's username
+  receiverIds: [String] (required),         // Array of receiver usernames
   amounts: [Number] (required),             // Array of amounts (same order as receiverIds)
   transactionHash: String (required),       // Blockchain transaction hash
   status: String (required),                // Transaction status
   createdAt: Date (auto)                    // Transaction timestamp
 }
-```
+Split Payment Schema
 
-### Split Payment Schema
-```javascript
+JavaScript
 {
   payeeId: String (required),               // Who created the split (restaurant, etc.)
   contributorIds: [String] (required),      // Array of people who need to pay
@@ -58,128 +51,116 @@ https://kaia-server.onrender.com/
   ],
   createdAt: Date (auto)                    // Transaction timestamp
 }
-```
+Authentication Routes (/api/auth)
+1. Add User
 
----
+POST /api/auth/addUser
 
-## Authentication Routes (`/api/auth`)
+Request Body:
 
-### 1. Add User
-**POST** `/api/auth/addUser`
-
-**Request Body:**
-```json
+JSON
 {
-  "userId": "sarthak123",
+  "username": "sarthak123",
   "displayName": "Sarthak Patel",
   "pictureUrl": "https://profile.line-scdn.net/sarthak",
   "statusMessage": "Hello from PayZoll!",
   "walletAddress": "0x742d35cc6e1f23c6d8b3c8f9f1e4a5b6c7d8e9f0",
-  "lineUserId": "U4af4980629abc123def456789012345f"
+  "userId": "U4af4980629abc123def456789012345f"
 }
-```
+Success Response (201):
 
-**Success Response (201):**
-```json
+JSON
 {
   "_id": "64f1234567890abcdef123456",
-  "userId": "sarthak123",
+  "username": "sarthak123",
   "displayName": "Sarthak Patel",
   "pictureUrl": "https://profile.line-scdn.net/sarthak",
   "statusMessage": "Hello from PayZoll!",
   "walletAddress": "0x742d35cc6e1f23c6d8b3c8f9f1e4a5b6c7d8e9f0",
-  "lineUserId": "U4af4980629abc123def456789012345f"
+  "userId": "U4af4980629abc123def456789012345f"
 }
-```
+Error Response (400):
 
-**Error Response (400):**
-```json
+JSON
 {
   "error": "User already exists"
 }
-```
+2. Get User by ID
 
-### 2. Get User by ID
-**GET** `/api/auth/getUser/:userId`
+GET /api/auth/getUser/:username
 
-**URL Example:**
-```
+URL Example:
+
 http://localhost:5000/api/auth/getUser/sarthak123
-```
+Success Response (200):
 
-**Success Response (200):**
-```json
+JSON
 {
   "_id": "64f1234567890abcdef123456",
-  "userId": "sarthak123",
+  "username": "sarthak123",
   "displayName": "Sarthak Patel",
   "pictureUrl": "https://profile.line-scdn.net/sarthak",
   "statusMessage": "Hello from PayZoll!",
   "walletAddress": "0x742d35cc6e1f23c6d8b3c8f9f1e4a5b6c7d8e9f0",
-  "lineUserId": "U4af4980629abc123def456789012345f"
+  "userId": "U4af4980629abc123def456789012345f"
 }
-```
+Error Response (404):
 
-**Error Response (404):**
-```json
+JSON
 {
   "error": "User not found"
 }
-```
+3. Search Users
 
-### 3. Search Users
-**GET** `/api/auth/searchUsers?query=sar`
+GET /api/auth/searchUsers?query=sar
 
-**Query Parameters:**
-- `query` (required): Search term for userId
+Query Parameters:
 
-**URL Example:**
-```
+query (required): Search term for username
+
+URL Example:
+
 http://localhost:5000/api/auth/searchUsers?query=sar
-```
+Success Response (200):
 
-**Success Response (200):**
-```json
+JSON
 [
   {
     "_id": "64f1234567890abcdef123456",
-    "userId": "sarthak123",
+    "username": "sarthak123",
     "displayName": "Sarthak Patel",
     "walletAddress": "0x742d35cc6e1f23c6d8b3c8f9f1e4a5b6c7d8e9f0"
   },
   {
     "_id": "64f1234567890abcdef123457",
-    "userId": "sarika456",
+    "username": "sarika456",
     "displayName": "Sarika Sharma",
     "walletAddress": "0x842d35cc6e1f23c6d8b3c8f9f1e4a5b6c7d8e9f1"
   }
 ]
-```
+4. Get All Users
 
-### 4. Get All Users
-**GET** `/api/auth/getAllUsers`
+GET /api/auth/getAllUsers
 
-**Success Response (200):**
-```json
+Success Response (200):
+
+JSON
 [
   {
     "_id": "64f1234567890abcdef123456",
-    "userId": "sarthak123",
+    "username": "sarthak123",
     "displayName": "Sarthak Patel",
     "walletAddress": "0x742d35cc6e1f23c6d8b3c8f9f1e4a5b6c7d8e9f0"
   }
 ]
-```
+P2P Transaction Routes (/api/p2p)
+1. Record P2P Transaction
 
----
+POST /api/p2p/recordP2PTxn
 
-## P2P Transaction Routes (`/api/p2p`)
+Request Body:
 
-### 1. Record P2P Transaction
-**POST** `/api/p2p/recordP2PTxn`
-
-**Request Body:**
-```json
+JSON
 {
   "senderId": "sarthak123",
   "receiverId": "alice456",
@@ -187,10 +168,9 @@ http://localhost:5000/api/auth/searchUsers?query=sar
   "transactionHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
   "status": "completed"
 }
-```
+Success Response (201):
 
-**Success Response (201):**
-```json
+JSON
 {
   "_id": "64f1234567890abcdef123456",
   "senderId": "sarthak123",
@@ -200,22 +180,22 @@ http://localhost:5000/api/auth/searchUsers?query=sar
   "status": "completed",
   "createdAt": "2023-09-16T10:30:00.000Z"
 }
-```
+Features:
 
-**Features:**
-- ✅ Sends LINE push notification to both sender and receiver
-- ✅ Includes sender/receiver names in notifications
+✅ Sends LINE push notification to both sender and receiver
 
-### 2. Get P2P Transactions
-**GET** `/api/p2p/getP2PTxns/:userId`
+✅ Includes sender/receiver names in notifications
 
-**URL Example:**
-```
+2. Get P2P Transactions
+
+GET /api/p2p/getP2PTxns/:username
+
+URL Example:
+
 http://localhost:5000/api/p2p/getP2PTxns/sarthak123
-```
+Success Response (200):
 
-**Success Response (200):**
-```json
+JSON
 [
   {
     "_id": "64f1234567890abcdef123456",
@@ -227,17 +207,14 @@ http://localhost:5000/api/p2p/getP2PTxns/sarthak123
     "createdAt": "2023-09-16T10:30:00.000Z"
   }
 ]
-```
+Bulk Payment Routes (/api/bulk)
+1. Record Bulk Transaction
 
----
+POST /api/bulk/recordBulkTxn
 
-## Bulk Payment Routes (`/api/bulk`)
+Request Body:
 
-### 1. Record Bulk Transaction
-**POST** `/api/bulk/recordBulkTxn`
-
-**Request Body:**
-```json
+JSON
 {
   "senderId": "sarthak123",
   "receiverIds": ["alice456", "bob789", "charlie101"],
@@ -245,10 +222,9 @@ http://localhost:5000/api/p2p/getP2PTxns/sarthak123
   "transactionHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
   "status": "completed"
 }
-```
+Success Response (201):
 
-**Success Response (201):**
-```json
+JSON
 {
   "_id": "64f1234567890abcdef123456",
   "senderId": "sarthak123",
@@ -258,27 +234,24 @@ http://localhost:5000/api/p2p/getP2PTxns/sarthak123
   "status": "completed",
   "createdAt": "2023-09-16T10:30:00.000Z"
 }
-```
+Important: receiverIds and amounts arrays must have the same length and order.
 
-**Important:** `receiverIds` and `amounts` arrays must have the same length and order.
+2. Update Bulk Transaction Status
 
-### 2. Update Bulk Transaction Status
-**PUT** `/api/bulk/updateBulkTxnStatus/:id`
+PUT /api/bulk/updateBulkTxnStatus/:id
 
-**URL Example:**
-```
+URL Example:
+
 http://localhost:5000/api/bulk/updateBulkTxnStatus/64f1234567890abcdef123456
-```
+Request Body:
 
-**Request Body:**
-```json
+JSON
 {
   "status": "completed"
 }
-```
+Success Response (200):
 
-**Success Response (200):**
-```json
+JSON
 {
   "_id": "64f1234567890abcdef123456",
   "senderId": "sarthak123",
@@ -287,18 +260,16 @@ http://localhost:5000/api/bulk/updateBulkTxnStatus/64f1234567890abcdef123456
   "status": "completed",
   "createdAt": "2023-09-16T10:30:00.000Z"
 }
-```
+3. Get Bulk Transactions
 
-### 3. Get Bulk Transactions
-**GET** `/api/bulk/getBulkTxns/:userId`
+GET /api/bulk/getBulkTxns/:username
 
-**URL Example:**
-```
+URL Example:
+
 http://localhost:5000/api/bulk/getBulkTxns/sarthak123
-```
+Success Response (200):
 
-**Success Response (200):**
-```json
+JSON
 [
   {
     "_id": "64f1234567890abcdef123456",
@@ -309,19 +280,16 @@ http://localhost:5000/api/bulk/getBulkTxns/sarthak123
     "createdAt": "2023-09-16T10:30:00.000Z"
   }
 ]
-```
+Note: Returns transactions where user is either sender or receiver.
 
-**Note:** Returns transactions where user is either sender or receiver.
+Split Payment Routes (/api/split)
+1. Record Split Transaction
 
----
+POST /api/split/recordSplitTxn
 
-## Split Payment Routes (`/api/split`)
+Request Body:
 
-### 1. Record Split Transaction
-**POST** `/api/split/recordSplitTxn`
-
-**Request Body:**
-```json
+JSON
 {
   "payeeId": "restaurant123",
   "contributorIds": ["alice456", "bob789", "charlie101"],
@@ -333,10 +301,9 @@ http://localhost:5000/api/bulk/getBulkTxns/sarthak123
     {"contributorId": "charlie101", "paid": false}
   ]
 }
-```
+Success Response (201):
 
-**Success Response (201):**
-```json
+JSON
 {
   "_id": "64f1234567890abcdef123456",
   "payeeId": "restaurant123",
@@ -350,26 +317,23 @@ http://localhost:5000/api/bulk/getBulkTxns/sarthak123
   ],
   "createdAt": "2023-09-16T10:30:00.000Z"
 }
-```
+2. Update Split Payment Status
 
-### 2. Update Split Payment Status
-**PUT** `/api/split/updateSplitTxnStatus/:id`
+PUT /api/split/updateSplitTxnStatus/:id
 
-**URL Example:**
-```
+URL Example:
+
 http://localhost:5000/api/split/updateSplitTxnStatus/64f1234567890abcdef123456
-```
+Request Body:
 
-**Request Body:**
-```json
+JSON
 {
   "contributorId": "alice456",
   "paid": true
 }
-```
+Success Response (200):
 
-**Success Response (200):**
-```json
+JSON
 {
   "_id": "64f1234567890abcdef123456",
   "payeeId": "restaurant123",
@@ -382,46 +346,38 @@ http://localhost:5000/api/split/updateSplitTxnStatus/64f1234567890abcdef123456
   ],
   "createdAt": "2023-09-16T10:30:00.000Z"
 }
-```
+3. Get Split Transactions by User
 
-### 3. Get Split Transactions by User
-**GET** `/api/split/getSplitTxns/:userId`
+GET /api/split/getSplitTxns/:username
 
-**URL Example:**
-```
+URL Example:
+
 http://localhost:5000/api/split/getSplitTxns/alice456
-```
+4. Get Split Transaction by ID
 
-### 4. Get Split Transaction by ID
-**GET** `/api/split/getSplitTxnById/:id`
+GET /api/split/getSplitTxnById/:id
 
-**URL Example:**
-```
+URL Example:
+
 http://localhost:5000/api/split/getSplitTxnById/64f1234567890abcdef123456
-```
+5. Get Split Transaction by Hash
 
-### 5. Get Split Transaction by Hash
-**GET** `/api/split/getSplitTxnByHash/:hash`
+GET /api/split/getSplitTxnByHash/:hash
 
-**URL Example:**
-```
+URL Example:
+
 http://localhost:5000/api/split/getSplitTxnByHash/0x1234567890abcdef...
-```
+Transaction History Routes (/api/history)
+1. Get Complete Transaction History
 
----
+GET /api/history/getUserTxnHistory/:username
 
-## Transaction History Routes (`/api/history`)
+URL Example:
 
-### 1. Get Complete Transaction History
-**GET** `/api/history/getUserTxnHistory/:userId`
-
-**URL Example:**
-```
 http://localhost:5000/api/history/getUserTxnHistory/sarthak123
-```
+Success Response (200):
 
-**Success Response (200):**
-```json
+JSON
 {
   "summary": {
     "totalTransactions": 15,
@@ -465,22 +421,20 @@ http://localhost:5000/api/history/getUserTxnHistory/sarthak123
     }
   ]
 }
-```
+2. Get Transaction History by Type
 
-### 2. Get Transaction History by Type
-**GET** `/api/history/getTxnHistoryByType/:userId/:type`
+GET /api/history/getTxnHistoryByType/:username/:type
 
-**Valid Types:** `p2p`, `bulk`, `split`
+Valid Types: p2p, bulk, split
 
-**URL Examples:**
-```
+URL Examples:
+
 http://localhost:5000/api/history/getTxnHistoryByType/sarthak123/p2p
 http://localhost:5000/api/history/getTxnHistoryByType/sarthak123/bulk
 http://localhost:5000/api/history/getTxnHistoryByType/sarthak123/split
-```
+Success Response (200):
 
-**Success Response (200):**
-```json
+JSON
 {
   "transactionType": "P2P",
   "count": 5,
@@ -497,73 +451,68 @@ http://localhost:5000/api/history/getTxnHistoryByType/sarthak123/split
     }
   ]
 }
-```
+Status Codes
+Success Codes
 
----
+200 - OK (GET requests)
 
-## Status Codes
+201 - Created (POST requests)
 
-### Success Codes
-- **200** - OK (GET requests)
-- **201** - Created (POST requests)
+Error Codes
 
-### Error Codes
-- **400** - Bad Request (validation errors, missing data)
-- **404** - Not Found (user/transaction not found)
-- **500** - Internal Server Error
+400 - Bad Request (validation errors, missing data)
 
----
+404 - Not Found (user/transaction not found)
 
-## Transaction Status Values
+500 - Internal Server Error
 
-### Common Status Values
-- `"pending"` - Transaction initiated but not confirmed
-- `"processing"` - Transaction being processed
-- `"completed"` - Transaction successfully completed
-- `"failed"` - Transaction failed
-- `"cancelled"` - Transaction cancelled
-- `"partial"` - Some transfers completed (bulk payments)
+Transaction Status Values
+Common Status Values
 
----
+"pending" - Transaction initiated but not confirmed
 
-## LINE Push Notifications
+"processing" - Transaction being processed
 
-### Automatic Notifications
+"completed" - Transaction successfully completed
+
+"failed" - Transaction failed
+
+"cancelled" - Transaction cancelled
+
+"partial" - Some transfers completed (bulk payments)
+
+LINE Push Notifications
+Automatic Notifications
+
 The backend automatically sends LINE push notifications for:
 
-1. **P2P Transactions**: Both sender and receiver get notified
-2. **Bulk Transfers**: Sender and all receivers get notified
-3. **Split Payments**: Payee and all contributors get notified
+P2P Transactions: Both sender and receiver get notified
 
-### Message Examples
+Bulk Transfers: Sender and all receivers get notified
 
-**P2P Sender:**
-```
+Split Payments: Payee and all contributors get notified
+
+Message Examples
+
+P2P Sender:
+
 💸 You sent $100.50 to Alice Smith via PayZoll Pay
 Status: completed
 Hash: 0x1234567...
-```
+P2P Receiver:
 
-**P2P Receiver:**
-```
 💰 You received $100.50 from John Doe via PayZoll Pay
 Status: completed
 Hash: 0x1234567...
-```
+Development Notes
+Environment Variables Required
 
----
-
-## Development Notes
-
-### Environment Variables Required
-```
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/PayZoll
 LINE_CHANNEL_ACCESS_TOKEN=your_line_channel_access_token
 PORT=5000
-```
+Dependencies
 
-### Dependencies
-```json
+JSON
 {
   "express": "^4.18.2",
   "mongoose": "^7.5.0",
@@ -572,21 +521,22 @@ PORT=5000
   "axios": "^1.5.0",
   "uuid": "^9.0.0"
 }
-```
+MongoDB Collections
 
-### MongoDB Collections
-- `users` - User profiles and LINE IDs
-- `p2p` - P2P transactions
-- `bulk` - Bulk payment transactions
-- `split` - Split payment transactions
+users - User profiles and LINE IDs
 
----
+p2p - P2P transactions
 
-## Frontend Integration Tips
+bulk - Bulk payment transactions
 
-### Error Handling
+split - Split payment transactions
+
+Frontend Integration Tips
+Error Handling
+
 Always check response status codes and handle errors:
-```javascript
+
+JavaScript
 try {
   const response = await fetch('/api/auth/addUser', {
     method: 'POST',
@@ -604,19 +554,21 @@ try {
 } catch (error) {
   console.error('Error adding user:', error.message);
 }
-```
+State Management
 
-### State Management
 Consider using React Context or Redux to manage:
-- Current user data
-- Transaction history
-- Loading states
-- Error states
 
-### Real-time Updates
+Current user data
+
+Transaction history
+
+Loading states
+
+Error states
+
+Real-time Updates
+
 For real-time transaction updates, consider implementing WebSocket connections or polling the transaction history endpoints.
 
----
-
-**Last Updated:** September 16, 2025
-**Version:** 1.0.0
+Last Updated: September 16, 2025
+Version: 1.0.0

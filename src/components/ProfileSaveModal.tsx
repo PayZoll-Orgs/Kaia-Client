@@ -20,25 +20,24 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
   
   // Form state matching backend UserSchema exactly
   const [profileData, setProfileData] = useState<UserSchema>({
-    userId: '', // Empty initially, user will enter custom userId
+    username: '', // Empty initially, user will enter custom username
     displayName: user?.displayName || '',
     pictureUrl: user?.pictureUrl || '',
     statusMessage: '',
     walletAddress: wallet.address || '',
-    lineUserId: user?.userId || '' // lineUserId from SDK
+    userId: user?.userId || '' // LINE user ID from SDK
   });
 
   // Update form when user/wallet data changes
   useEffect(() => {
     setProfileData(prev => ({
       ...prev,
-      userId: user?.userId || prev.userId, // Use lineUserId as userId
+      userId: user?.userId || prev.userId, // LINE user ID from SDK
       displayName: user?.displayName || prev.displayName,
       pictureUrl: user?.pictureUrl || prev.pictureUrl,
-      walletAddress: wallet.address || prev.walletAddress,
-      lineUserId: user?.userId || prev.lineUserId
+      walletAddress: wallet.address || prev.walletAddress
     }));
-  }, [user, wallet.address]);
+  }, [user?.userId, user?.displayName, user?.pictureUrl, wallet.address]);
 
   // Check if user exists when modal opens
   useEffect(() => {
@@ -49,10 +48,9 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
         const lineUserId = user.userId; // LINE user ID from SDK
         console.log('🔍 Checking if lineUserId exists in database:', lineUserId);
 
-        // Check if this lineUserId is already registered by searching through users
-        // Since backend only has getUser by userId, we need to check by lineUserId
-        // We'll call the endpoint with lineUserId and see if we get a user back
-        const response = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.AUTH.GET_USER}/${lineUserId}`, {
+        // Since backend only searches by userId, we need to get all users and find by lineUserId
+        // This is not ideal for production, but works for now until backend adds lineUserId search
+        const response = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.AUTH.GET_ALL_USERS}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -60,33 +58,70 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
         });
 
         if (response.ok) {
-          const existingUser = await response.json();
-          console.log('✅ User already exists with this lineUserId, auto-login:', existingUser);
+          const allUsers = await response.json();
+          console.log('📋 Retrieved all users, searching for lineUserId:', lineUserId);
           
-          // User exists, pre-fill and auto-complete
-          setProfileData({
-            userId: existingUser.userId, // Their custom userId
-            displayName: existingUser.displayName || '',
-            pictureUrl: existingUser.pictureUrl || '',
-            statusMessage: existingUser.statusMessage || '',
-            walletAddress: existingUser.walletAddress || wallet.address || '',
-            lineUserId: existingUser.lineUserId || lineUserId
-          });
+          // Find user with matching LINE userId (stored in userId field)
+          const existingUser = allUsers.find((u: UserSchema) => u.userId === lineUserId);
+          
+          if (existingUser) {
+            console.log('✅ Found existing user with this lineUserId, auto-login:', existingUser);
+            console.log('🔄 Calling onSave and onClose for existing user');
+            
+            // User exists, pre-fill and auto-complete
+            setProfileData({
+              username: existingUser.username, // Their custom username
+              displayName: existingUser.displayName || '',
+              pictureUrl: existingUser.pictureUrl || '',
+              statusMessage: existingUser.statusMessage || '',
+              walletAddress: existingUser.walletAddress || wallet.address || '',
+              userId: existingUser.userId || lineUserId // LINE user ID
+            });
 
-          // Auto-login existing user
-          onSave(existingUser);
-          onClose();
+            // Auto-login existing user
+            console.log('📤 Triggering onSave callback with existing user data');
+            onSave(existingUser);
+            console.log('📤 Triggering onClose to close modal');
+            onClose();
+            return;
+          } else {
+            console.log('ℹ️ LineUserId not found in database, user needs to register');
+            console.log('📋 Modal should stay open for new user registration');
+            // Reset form for new user registration
+            setProfileData(prev => ({
+              ...prev,
+              username: '', // Empty so user can enter custom username
+              userId: lineUserId, // Set the LINE user ID from SDK
+              displayName: user?.displayName || '',
+              pictureUrl: user?.pictureUrl || '',
+              walletAddress: wallet.address || ''
+            }));
+            console.log('✅ Profile form ready for new user input');
+          }
         } else {
-          console.log('ℹ️ LineUserId not found in database, user needs to register');
-          // Reset form for new user registration
+          console.error('❌ Failed to fetch users from backend:', response.status);
+          // Fallback: assume new user
           setProfileData(prev => ({
             ...prev,
-            userId: '', // Empty so user can enter custom userId
-            lineUserId: lineUserId // Set the lineUserId from SDK
+            username: '', // Empty so user can enter custom username
+            userId: lineUserId, // LINE user ID from SDK
+            displayName: user?.displayName || '',
+            pictureUrl: user?.pictureUrl || '',
+            walletAddress: wallet.address || ''
           }));
         }
       } catch (error) {
-        console.log('ℹ️ Error checking user (normal for new users):', error);
+        console.error('❌ Error checking existing user:', error);
+        // Fallback: assume new user
+        const lineUserId = user?.userId || '';
+        setProfileData(prev => ({
+          ...prev,
+          username: '', // Empty for new user to enter custom username
+          userId: lineUserId, // LINE user ID from SDK
+          displayName: user?.displayName || '',
+          pictureUrl: user?.pictureUrl || '',
+          walletAddress: wallet.address || ''
+        }));
       }
     };
 
@@ -102,9 +137,9 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
     };
   }, [userIdCheckTimeout]);
 
-  // Check userId availability with debouncing
-  const checkUserIdAvailability = async (userId: string) => {
-    if (!userId || userId.length < 3) {
+  // Check username availability with debouncing
+  const checkUsernameAvailability = async (username: string) => {
+    if (!username || username.length < 3) {
       setUserIdAvailability('unchecked');
       return;
     }
@@ -112,7 +147,7 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
     setUserIdAvailability('checking');
 
     try {
-      const response = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.AUTH.GET_USER}/${userId}`, {
+      const response = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.AUTH.GET_USER}/${username}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -120,17 +155,17 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
       });
 
       if (response.ok) {
-        // User exists, userId is taken
+        // User exists, username is taken
         setUserIdAvailability('taken');
       } else if (response.status === 404) {
-        // User not found, userId is available
+        // User not found, username is available
         setUserIdAvailability('available');
       } else {
         // Other error
         setUserIdAvailability('unchecked');
       }
     } catch (error) {
-      console.error('Error checking userId availability:', error);
+      console.error('Error checking username availability:', error);
       setUserIdAvailability('unchecked');
     }
   };
@@ -141,8 +176,8 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
       [field]: value
     }));
 
-    // Special handling for userId - check availability with debouncing
-    if (field === 'userId') {
+    // Special handling for username - check availability with debouncing
+    if (field === 'username') {
       // Clear existing timeout
       if (userIdCheckTimeout) {
         clearTimeout(userIdCheckTimeout);
@@ -150,7 +185,7 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
 
       // Set new timeout for debounced checking
       const timeout = setTimeout(() => {
-        checkUserIdAvailability(value);
+        checkUsernameAvailability(value);
       }, 500); // 500ms debounce
 
       setUserIdCheckTimeout(timeout);
@@ -163,13 +198,13 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
       return;
     }
 
-    if (!profileData.userId || profileData.userId.trim().length < 3) {
-      setError('Please enter a valid User ID (minimum 3 characters)');
+    if (!profileData.username || profileData.username.trim().length < 3) {
+      setError('Please enter a valid Username (minimum 3 characters)');
       return;
     }
 
     if (userIdAvailability !== 'available') {
-      setError('Please choose an available User ID');
+      setError('Please choose an available Username');
       return;
     }
 
@@ -180,12 +215,12 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
       console.log('🔄 Creating new user profile:', profileData);
 
       const profileToSave = {
-        userId: profileData.userId.trim(), // Custom userId chosen by user
+        username: profileData.username.trim(), // Custom username chosen by user
         displayName: profileData.displayName || user?.displayName || 'Anonymous User',
         pictureUrl: profileData.pictureUrl || user?.pictureUrl || '',
         statusMessage: profileData.statusMessage || '',
         walletAddress: wallet.address || '',
-        lineUserId: user.userId // LINE user ID for notifications
+        userId: user.userId // LINE user ID for notifications
       };
 
       console.log('📤 Sending profile to backend:', profileToSave);
@@ -219,7 +254,12 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    console.log('❌ ProfileSaveModal not open, returning null');
+    return null;
+  }
+
+  console.log('✅ ProfileSaveModal is open, rendering modal');
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -250,17 +290,17 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
             </div>
           )}
 
-          {/* Custom User ID */}
+          {/* Custom Username */}
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
               <UserIcon className="w-4 h-4" />
-              Choose Your User ID *
+              Choose Your Username *
             </label>
             <div className="relative">
               <input
                 type="text"
-                value={profileData.userId}
-                onChange={(e) => handleInputChange('userId', e.target.value)}
+                value={profileData.username}
+                onChange={(e) => handleInputChange('username', e.target.value)}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   userIdAvailability === 'available' ? 'border-green-500 bg-green-50' :
                   userIdAvailability === 'taken' ? 'border-red-500 bg-red-50' :
@@ -290,10 +330,10 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
             </div>
             <div className="mt-1">
               {userIdAvailability === 'available' && (
-                <p className="text-xs text-green-600">✅ This User ID is available!</p>
+                <p className="text-xs text-green-600">✅ This Username is available!</p>
               )}
               {userIdAvailability === 'taken' && (
-                <p className="text-xs text-red-600">❌ This User ID is already taken</p>
+                <p className="text-xs text-red-600">❌ This Username is already taken</p>
               )}
               {userIdAvailability === 'checking' && (
                 <p className="text-xs text-blue-600">🔍 Checking availability...</p>
@@ -372,15 +412,10 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
             </div>
           </div>
 
-          {/* LINE User ID (Hidden/Read-only) */}
-          {profileData.lineUserId && (
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                LINE User ID
-              </label>
-              <div className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg font-mono text-sm text-gray-600">
-                {profileData.lineUserId}
-              </div>
+          {/* LINE User ID (Hidden Debug Info) */}
+          {user?.userId && (
+            <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+              <strong>Debug:</strong> LINE ID: {user.userId}
             </div>
           )}
 
@@ -403,7 +438,7 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
           </button>
           <button
             onClick={handleSave}
-            disabled={isLoading || !profileData.displayName?.trim() || !profileData.userId?.trim() || userIdAvailability !== 'available'}
+            disabled={isLoading || !profileData.displayName?.trim() || !profileData.username?.trim() || userIdAvailability !== 'available'}
             className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {isLoading ? (

@@ -35,14 +35,15 @@ export const API_ENDPOINTS = {
   // Auth routes (from backend.md)
   AUTH: {
     ADD_USER: '/api/auth/addUser',           // POST - Create new user
-    GET_USER: '/api/auth/getUser',           // GET - Get user by ID (/api/auth/getUser/:userId)
-    SEARCH_USERS: '/api/auth/searchUsers'    // GET - Search users by query
+    GET_USER: '/api/auth/getUser',           // GET - Get user by username (/api/auth/getUser/:username)
+    SEARCH_USERS: '/api/auth/searchUsers',   // GET - Search users by query  
+    GET_ALL_USERS: '/api/auth/getAllUsers'   // GET - Get all users
   },
   
   // P2P routes (from backend.md)
   P2P: {
     RECORD: '/api/p2p/recordP2PTxn',         // POST - Record P2P transaction
-    GET_TRANSACTIONS: '/api/p2p/getP2PTxns'  // GET - Get P2P transactions (/api/p2p/getP2PTxns/:userId)
+    GET_TRANSACTIONS: '/api/p2p/getP2PTxns'  // GET - Get P2P transactions (/api/p2p/getP2PTxns/:username)
   },
   
   // Bulk transfer routes (from backend.md)
@@ -61,14 +62,14 @@ export const API_ENDPOINTS = {
   }
 } as const;
 
-// Schema interfaces matching backend models
+// Schema interfaces matching backend models exactly
 export interface UserSchema {
-  userId: string;           // Required, unique - our app user ID
-  displayName?: string;     // Optional - user display name
+  username: string;         // Required, unique - custom username chosen by user
+  displayName: string;      // Required - user display name  
   pictureUrl?: string;      // Optional - profile picture URL
   statusMessage?: string;   // Optional - user status message
-  walletAddress?: string;   // Optional - user's wallet address
-  lineUserId?: string;      // Optional - LINE user ID for integration
+  walletAddress: string;    // Required - user's wallet address
+  userId: string;           // Required - LINE user ID for notifications
 }
 
 // P2P Transaction Schema (from p2pSchema.js)
