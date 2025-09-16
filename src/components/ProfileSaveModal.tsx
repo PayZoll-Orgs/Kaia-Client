@@ -159,7 +159,7 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
       }
     } catch (error) {
       console.error('Error checking username availability:', error);
-      setUserIdAvailability('unchecked');
+      setUserIdAvailability('available');
     }
   };
 
