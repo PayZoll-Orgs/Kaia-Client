@@ -30,43 +30,34 @@ export const CONFIG = {
   APP_URL: 'https://payzoll-pay.onrender.com'
 } as const;
 
-// Backend API Endpoints - exact routes from Kaia-Server
+// Backend API Endpoints - exact routes from backend.md
 export const API_ENDPOINTS = {
-  // Auth routes (from authRoutes.js)
+  // Auth routes (from backend.md)
   AUTH: {
-    LOGIN: '/auth/login',
-    LOGOUT: '/auth/logout', 
-    CALLBACK: '/auth/callback'
+    ADD_USER: '/api/auth/addUser',           // POST - Create new user
+    GET_USER: '/api/auth/getUser',           // GET - Get user by ID (/api/auth/getUser/:userId)
+    SEARCH_USERS: '/api/auth/searchUsers'    // GET - Search users by query
   },
   
-  // User profile routes
-  USER: {
-    PROFILE: '/api/user/profile',
-    UPDATE_PROFILE: '/api/user/profile'
-  },
-  
-  // P2P routes (from p2pRoutes.js)
+  // P2P routes (from backend.md)
   P2P: {
-    SEND: '/api/p2p/send',
-    HISTORY: '/api/p2p/history'
+    RECORD: '/api/p2p/recordP2PTxn',         // POST - Record P2P transaction
+    GET_TRANSACTIONS: '/api/p2p/getP2PTxns'  // GET - Get P2P transactions (/api/p2p/getP2PTxns/:userId)
   },
   
-  // Bulk transfer routes (from bulkRoutes.js)
+  // Bulk transfer routes (from backend.md)
   BULK: {
-    CREATE: '/api/bulk/create',
-    HISTORY: '/api/bulk/history'
+    RECORD: '/api/bulk/recordBulkTxn',       // POST - Record bulk transaction
+    UPDATE_STATUS: '/api/bulk/updateBulkTxnStatus', // PUT - Update bulk transaction status
+    GET_TRANSACTIONS: '/api/bulk/getBulkTxns'        // GET - Get bulk transactions (/api/bulk/getBulkTxns/:userId)
   },
   
-  // Split payment routes (from splitRoutes.js)  
+  // Split payment routes (from backend.md)  
   SPLIT: {
-    CREATE: '/api/split/create',
-    JOIN: '/api/split/join',
-    HISTORY: '/api/split/history'
-  },
-  
-  // Transaction history routes (from txnHistoryRoutes.js)
-  TRANSACTIONS: {
-    HISTORY: '/api/transactions/history'
+    RECORD: '/api/split/recordSplitTxn',     // POST - Record split transaction
+    UPDATE_STATUS: '/api/split/updateSplitTxnStatus', // PUT - Update split payment status  
+    GET_TRANSACTIONS: '/api/split/getSplitTxns',      // GET - Get split transactions by user
+    GET_BY_ID: '/api/split/getSplitTxnById'           // GET - Get split transaction by ID
   }
 } as const;
 

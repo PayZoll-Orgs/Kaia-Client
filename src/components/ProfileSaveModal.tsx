@@ -18,7 +18,7 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
   
   // Form state matching backend UserSchema exactly
   const [profileData, setProfileData] = useState<UserSchema>({
-    userId: '', // Will be generated/set by backend
+    userId: user?.userId || '', // Use lineUserId as userId for backend
     displayName: user?.displayName || '',
     pictureUrl: user?.pictureUrl || '',
     statusMessage: '',
@@ -30,12 +30,57 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
   useEffect(() => {
     setProfileData(prev => ({
       ...prev,
+      userId: user?.userId || prev.userId, // Use lineUserId as userId
       displayName: user?.displayName || prev.displayName,
       pictureUrl: user?.pictureUrl || prev.pictureUrl,
       walletAddress: wallet.address || prev.walletAddress,
       lineUserId: user?.userId || prev.lineUserId
     }));
   }, [user, wallet.address]);
+
+  // Check if user exists when modal opens
+  useEffect(() => {
+    const checkExistingUser = async () => {
+      if (!isOpen || !user?.userId) return;
+
+      try {
+        const lineUserId = user.userId; // This is actually the LINE user ID
+        console.log('🔍 Checking if user exists with lineUserId:', lineUserId);
+
+        // Use lineUserId as userId for backend search
+        const response = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.AUTH.GET_USER}/${lineUserId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const existingUser = await response.json();
+          console.log('✅ Found existing user, pre-filling form:', existingUser);
+          
+          setProfileData({
+            userId: existingUser.userId,
+            displayName: existingUser.displayName || '',
+            pictureUrl: existingUser.pictureUrl || '',
+            statusMessage: existingUser.statusMessage || '',
+            walletAddress: existingUser.walletAddress || wallet.address || '',
+            lineUserId: existingUser.lineUserId || ''
+          });
+
+          // User exists, auto-complete the flow
+          onSave(existingUser);
+          onClose();
+        } else {
+          console.log('ℹ️ User not found, showing profile form for new user');
+        }
+      } catch (error) {
+        console.log('ℹ️ Could not check existing user (this is normal for new users):', error);
+      }
+    };
+
+    checkExistingUser();
+  }, [isOpen, user?.userId, wallet.address, onSave, onClose]);
 
   const handleInputChange = (field: keyof UserSchema, value: string) => {
     setProfileData(prev => ({
@@ -45,28 +90,41 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
   };
 
   const handleSave = async () => {
+    if (!user?.userId) {
+      setError('LINE user ID is required. Please make sure you are logged in through LINE.');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
-      console.log('🔄 Saving profile to backend:', profileData);
+      console.log('🔄 Creating new user profile with lineUserId as userId:', profileData);
 
-      // Save to backend using exact API endpoint
-      const response = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.USER.UPDATE_PROFILE}`, {
+      const profileToSave = {
+        ...profileData,
+        userId: user.userId, // Use lineUserId as userId for backend
+        displayName: profileData.displayName || user?.displayName || 'Anonymous User',
+        walletAddress: wallet.address || '',
+        lineUserId: user.userId // Same as userId
+      };
+
+      // Create new user
+      const response = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.AUTH.ADD_USER}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(profileData),
+        body: JSON.stringify(profileToSave),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to save profile' }));
-        throw new Error(errorData.message || `HTTP ${response.status}: Failed to save profile`);
+        const errorData = await response.json().catch(() => ({ error: 'Failed to save profile' }));
+        throw new Error(errorData.error || `HTTP ${response.status}: Failed to save profile`);
       }
 
       const savedProfile = await response.json();
-      console.log('✅ Profile saved successfully:', savedProfile);
+      console.log('✅ Profile created successfully:', savedProfile);
 
       // Call parent callback with saved data
       onSave(savedProfile);
@@ -95,6 +153,22 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
 
         {/* Form */}
         <div className="p-6 space-y-6">
+          {/* LINE User ID (Read-only) */}
+          {user?.userId && (
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                <UserIcon className="w-4 h-4" />
+                LINE User ID
+              </label>
+              <div className="w-full px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg font-mono text-sm text-blue-800">
+                {user.userId}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Your unique LINE identifier used for your KaiaPay account
+              </p>
+            </div>
+          )}
+
           {/* Display Name */}
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
@@ -194,7 +268,7 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
           </button>
           <button
             onClick={handleSave}
-            disabled={isLoading || !profileData.displayName?.trim()}
+            disabled={isLoading || !profileData.displayName?.trim() || !profileData.userId}
             className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {isLoading ? (

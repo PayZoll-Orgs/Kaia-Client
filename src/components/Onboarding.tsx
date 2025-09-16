@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { WalletIcon, CheckCircleIcon, ArrowRightIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { WalletIcon, CheckCircleIcon, ArrowRightIcon, SparklesIcon, UserIcon } from '@heroicons/react/24/outline';
+import ProfileSaveModal from '@/components/ProfileSaveModal';
+import { UserSchema } from '@/lib/config';
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -12,6 +14,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const { user, wallet, connectWallet } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   console.log('🎯 Onboarding component rendered!', {
     currentStep,
@@ -23,11 +26,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   // Check if user already has a wallet
   useEffect(() => {
     if (wallet.isConnected && wallet.address) {
-      console.log('✅ User already has wallet, completing onboarding');
-      // User already has a wallet, skip onboarding
-      onComplete();
+      console.log('✅ User already has wallet, moving to profile setup');
+      // User already has a wallet, move to profile setup
+      setCurrentStep(3);
     }
-  }, [wallet.isConnected, wallet.address, onComplete]);
+  }, [wallet.isConnected, wallet.address]);
 
   const handleWalletSetup = async () => {
     setIsConnecting(true);
@@ -39,12 +42,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       
       if (address) {
         console.log('✅ Wallet setup completed during onboarding:', address);
-        setCurrentStep(3); // Move to completion step
-        
-        // Auto-complete onboarding after a short delay
-        setTimeout(() => {
-          onComplete();
-        }, 2000);
+        setCurrentStep(3); // Move to profile setup step
       }
     } catch (error) {
       console.error('❌ Wallet setup failed during onboarding:', error);
@@ -60,9 +58,19 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     }
   };
 
+  const handleProfileSave = (profileData: UserSchema) => {
+    console.log('✅ Profile saved successfully:', profileData);
+    setCurrentStep(4); // Move to completion step
+    
+    // Auto-complete onboarding after a short delay
+    setTimeout(() => {
+      onComplete();
+    }, 2000);
+  };
+
   const steps = [
     {
-      title: "Welcome to Our DApp!",
+      title: "Welcome to KaiaPay!",
       description: "Let's get you set up with a secure wallet on the Kaia network.",
       icon: SparklesIcon,
     },
@@ -72,8 +80,13 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       icon: WalletIcon,
     },
     {
+      title: "Set Up Your Profile",
+      description: "Complete your profile to personalize your KaiaPay experience.",
+      icon: UserIcon,
+    },
+    {
       title: "You're All Set!",
-      description: "Your wallet has been created successfully. Welcome aboard!",
+      description: "Welcome to KaiaPay! You&apos;re ready to start sending and receiving payments.",
       icon: CheckCircleIcon,
     }
   ];
@@ -180,16 +193,45 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 
           {currentStep === 3 && (
             <div className="space-y-4">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center gap-2 text-green-800">
-                  <CheckCircleIcon className="w-5 h-5" />
-                  <span className="font-medium">Wallet Created Successfully!</span>
-                </div>
-                {wallet.address && (
+              {wallet.address && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-center gap-2 text-green-800">
+                    <CheckCircleIcon className="w-5 h-5" />
+                    <span className="font-medium">Wallet Ready!</span>
+                  </div>
                   <p className="text-sm text-green-700 mt-2 font-mono">
                     {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
                   </p>
-                )}
+                </div>
+              )}
+              
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
+              >
+                <UserIcon className="w-5 h-5" />
+                Set Up Profile
+              </button>
+              
+              <button
+                onClick={() => setCurrentStep(4)}
+                className="w-full text-gray-600 hover:text-gray-800 font-medium py-2 px-4 rounded-xl transition-colors"
+              >
+                Skip Profile Setup
+              </button>
+            </div>
+          )}
+
+          {currentStep === 4 && (
+            <div className="space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-green-800">
+                  <CheckCircleIcon className="w-5 h-5" />
+                  <span className="font-medium">Setup Complete!</span>
+                </div>
+                <p className="text-sm text-green-700 mt-2">
+                  You&apos;re ready to start using KaiaPay
+                </p>
               </div>
               
               <button
@@ -215,6 +257,13 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           </div>
         )}
       </div>
+
+      {/* Profile Save Modal */}
+      <ProfileSaveModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        onSave={handleProfileSave}
+      />
     </div>
   );
 }

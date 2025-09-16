@@ -4,7 +4,7 @@
 import { ethers } from 'ethers';
 
 // MyDummyTokenWithFaucet Interface
-export interface MyDummyTokenWithFaucet extends ethers.Contract {
+export interface MyDummyTokenWithFaucet {
   FAUCET_AMOUNT(): Promise<bigint>;
   FAUCET_COOLDOWN(): Promise<bigint>;
   allowance(owner: string, spender: string): Promise<bigint>;
@@ -30,13 +30,13 @@ export interface MyDummyTokenWithFaucet extends ethers.Contract {
 }
 
 // BulkPayroll Interface
-export interface BulkPayroll extends ethers.Contract {
+export interface BulkPayroll {
   GAS_LIMIT(): Promise<bigint>;
   MAX_RECIPIENTS(): Promise<bigint>;
   bulkTransfer(token: string, recipients: string[], amounts: bigint): Promise<ethers.ContractTransactionResponse>;
   claimFailedTransfer(token: string): Promise<ethers.ContractTransactionResponse>;
   emergencyWithdraw(token: string): Promise<ethers.ContractTransactionResponse>;
-  failedTransfers(: string, : string): Promise<bigint>;
+  failedTransfers(recipient: string, token: string): Promise<bigint>;
   getFailedAmount(recipient: string, token: string): Promise<bigint>;
   owner(): Promise<string>;
   renounceOwnership(): Promise<ethers.ContractTransactionResponse>;
@@ -44,9 +44,9 @@ export interface BulkPayroll extends ethers.Contract {
 }
 
 // InvoiceSubscriptionService Interface
-export interface InvoiceSubscriptionService extends ethers.Contract {
+export interface InvoiceSubscriptionService {
   applyCouponDiscount(_invoiceId: bigint, _discountAmount: bigint): Promise<ethers.ContractTransactionResponse>;
-  buyerInvoices(: string, : bigint): Promise<bigint>;
+  buyerInvoices(buyer: string, index: bigint): Promise<bigint>;
   contributeToSplitPayment(_invoiceId: bigint, _amount: bigint): Promise<ethers.ContractTransactionResponse>;
   feeCollector(): Promise<string>;
   getBuyerInvoices(_buyer: string): Promise<bigint>;
@@ -54,7 +54,7 @@ export interface InvoiceSubscriptionService extends ethers.Contract {
   getSellerServices(_seller: string): Promise<bigint>;
   getService(_serviceId: bigint): Promise<any>;
   getSplitPaymentDetails(_invoiceId: bigint): Promise<any[]>;
-  invoices(: bigint): Promise<any[]>;
+  invoices(id: bigint): Promise<any[]>;
   listService(_serviceName: string, _description: string, _imageUrl: string, _priceInWei: bigint, _paymentToken: string): Promise<bigint>;
   markInvoiceOverdue(_invoiceId: bigint): Promise<ethers.ContractTransactionResponse>;
   owner(): Promise<string>;
@@ -62,18 +62,18 @@ export interface InvoiceSubscriptionService extends ethers.Contract {
   platformFeeRate(): Promise<bigint>;
   purchaseService(_serviceId: bigint, _allowSplitPayment: boolean, _daysUntilDue: bigint): Promise<bigint>;
   renounceOwnership(): Promise<ethers.ContractTransactionResponse>;
-  sellerServices(: string, : bigint): Promise<bigint>;
-  services(: bigint): Promise<any[]>;
-  splitPayments(: bigint): Promise<any[]>;
+  sellerServices(seller: string, index: bigint): Promise<bigint>;
+  services(id: bigint): Promise<any[]>;
+  splitPayments(id: bigint): Promise<any[]>;
   transferOwnership(newOwner: string): Promise<ethers.ContractTransactionResponse>;
   updateFeeCollector(_newFeeCollector: string): Promise<ethers.ContractTransactionResponse>;
   updatePlatformFee(_newFeeRate: bigint): Promise<ethers.ContractTransactionResponse>;
   updateServiceStatus(_serviceId: bigint, _isActive: boolean): Promise<ethers.ContractTransactionResponse>;
-  usedCouponCodes(: string): Promise<boolean>;
+  usedCouponCodes(code: string): Promise<boolean>;
 }
 
 // SplitBilling Interface
-export interface SplitBilling extends ethers.Contract {
+export interface SplitBilling {
   ETH_TOKEN(): Promise<string>;
   GAS_LIMIT(): Promise<bigint>;
   MAX_RECIPIENTS(): Promise<bigint>;
@@ -89,7 +89,7 @@ export interface SplitBilling extends ethers.Contract {
   payForSomeone(splitId: bigint, debtor: string): Promise<ethers.ContractTransactionResponse>;
   payShare(splitId: bigint): Promise<ethers.ContractTransactionResponse>;
   splitCounter(): Promise<bigint>;
-  splitRequests(: bigint): Promise<any[]>;
-  userSplits(: string, : bigint): Promise<bigint>;
+  splitRequests(id: bigint): Promise<any[]>;
+  userSplits(user: string, id: bigint): Promise<bigint>;
 }
 
