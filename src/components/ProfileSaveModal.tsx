@@ -48,9 +48,8 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
         const lineUserId = user.userId; // LINE user ID from SDK
         console.log('🔍 Checking if lineUserId exists in database:', lineUserId);
 
-        // Since backend only searches by userId, we need to get all users and find by lineUserId
-        // This is not ideal for production, but works for now until backend adds lineUserId search
-        const response = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.AUTH.GET_ALL_USERS}`, {
+        // Use direct getUser API endpoint with LINE user ID
+        const response = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.AUTH.GET_USER}/${lineUserId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -58,48 +57,42 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
         });
 
         if (response.ok) {
-          const allUsers = await response.json();
-          console.log('📋 Retrieved all users, searching for lineUserId:', lineUserId);
+          // User exists with this LINE user ID
+          const existingUser = await response.json();
+          console.log('✅ Found existing user with this lineUserId, auto-login:', existingUser);
+          console.log('🔄 Calling onSave and onClose for existing user');
           
-          // Find user with matching LINE userId (stored in userId field)
-          const existingUser = allUsers.find((u: UserSchema) => u.userId === lineUserId);
-          
-          if (existingUser) {
-            console.log('✅ Found existing user with this lineUserId, auto-login:', existingUser);
-            console.log('🔄 Calling onSave and onClose for existing user');
-            
-            // User exists, pre-fill and auto-complete
-            setProfileData({
-              username: existingUser.username, // Their custom username
-              displayName: existingUser.displayName || '',
-              pictureUrl: existingUser.pictureUrl || '',
-              statusMessage: existingUser.statusMessage || '',
-              walletAddress: existingUser.walletAddress || wallet.address || '',
-              userId: existingUser.userId || lineUserId // LINE user ID
-            });
+          // User exists, pre-fill and auto-complete
+          setProfileData({
+            username: existingUser.username, // Their custom username
+            displayName: existingUser.displayName || '',
+            pictureUrl: existingUser.pictureUrl || '',
+            statusMessage: existingUser.statusMessage || '',
+            walletAddress: existingUser.walletAddress || wallet.address || '',
+            userId: existingUser.userId || lineUserId // LINE user ID
+          });
 
-            // Auto-login existing user
-            console.log('📤 Triggering onSave callback with existing user data');
-            onSave(existingUser);
-            console.log('📤 Triggering onClose to close modal');
-            onClose();
-            return;
-          } else {
-            console.log('ℹ️ LineUserId not found in database, user needs to register');
-            console.log('📋 Modal should stay open for new user registration');
-            // Reset form for new user registration
-            setProfileData(prev => ({
-              ...prev,
-              username: '', // Empty so user can enter custom username
-              userId: lineUserId, // Set the LINE user ID from SDK
-              displayName: user?.displayName || '',
-              pictureUrl: user?.pictureUrl || '',
-              walletAddress: wallet.address || ''
-            }));
-            console.log('✅ Profile form ready for new user input');
-          }
+          // Auto-login existing user
+          console.log('📤 Triggering onSave callback with existing user data');
+          onSave(existingUser);
+          console.log('📤 Triggering onClose to close modal');
+          onClose();
+          return;
+        } else if (response.status === 404) {
+          console.log('ℹ️ LineUserId not found in database (404), user needs to register');
+          console.log('📋 Modal should stay open for new user registration');
+          // Reset form for new user registration
+          setProfileData(prev => ({
+            ...prev,
+            username: '', // Empty so user can enter custom username
+            userId: lineUserId, // Set the LINE user ID from SDK
+            displayName: user?.displayName || '',
+            pictureUrl: user?.pictureUrl || '',
+            walletAddress: wallet.address || ''
+          }));
+          console.log('✅ Profile form ready for new user input');
         } else {
-          console.error('❌ Failed to fetch users from backend:', response.status);
+          console.error('❌ Failed to fetch user from backend:', response.status);
           // Fallback: assume new user
           setProfileData(prev => ({
             ...prev,
