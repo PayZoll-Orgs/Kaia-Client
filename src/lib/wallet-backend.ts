@@ -120,7 +120,6 @@ class MockWalletStorage {
 }
 
 // Backend API configuration (kept for future real backend implementation)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const BACKEND_CONFIG = {
   baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001',
   endpoints: {
