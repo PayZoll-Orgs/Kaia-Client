@@ -1,0 +1,29 @@
+{
+  "name": "contracts-kaia",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "test:gas": "REPORT_GAS=true hardhat test",
+    "deploy:testnet": "hardhat run scripts/deploy.js --network kaiaTestnet",
+    "verify:testnet": "hardhat run scripts/verify-contracts.js --network kaiaTestnet",
+    "interact:testnet": "hardhat run scripts/interact-contracts.js --network kaiaTestnet",
+    "extract-abis": "node scripts/extract-abis.js",
+    "full-deploy": "npm run compile && npm run test && npm run deploy:testnet && npm run verify:testnet && npm run interact:testnet && npm run extract-abis",
+    "clean": "hardhat clean"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@kaiachain/contracts": "^1.0.1",
+    "@openzeppelin/contracts": "^5.4.0",
+    "dotenv": "^16.6.1"
+  },
+  "description": "",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.26.3"
+  }
+}
