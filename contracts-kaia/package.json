@@ -19,7 +19,8 @@
   "dependencies": {
     "@kaiachain/contracts": "^1.0.1",
     "@openzeppelin/contracts": "^5.4.0",
-    "dotenv": "^16.6.1"
+    "dotenv": "^16.6.1",
+    "ethers": "^6.15.0"
   },
   "description": "",
   "devDependencies": {
