@@ -153,10 +153,7 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
       } else if (response.status === 404) {
         // User not found, username is available
         setUserIdAvailability('available');
-      } else {
-        // Other error
-        setUserIdAvailability('unchecked');
-      }
+      } 
     } catch (error) {
       console.error('Error checking username availability:', error);
       setUserIdAvailability('available');
