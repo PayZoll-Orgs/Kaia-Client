@@ -48,6 +48,47 @@ interface BulkPaymentModalProps {
   onSuccess: (paymentData: BulkPaymentData) => void;
 }
 
+// Utility function to encode parameters for bulkTransfer(address[], uint256[])
+function encodeBulkTransferData(recipients: string[], amounts: string[]): string {
+  // This is a simplified ABI encoding for two dynamic arrays
+  // In production, use a proper ABI encoding library like ethers.js
+  
+  // For now, we'll create a basic encoding that follows ABI specification
+  // Structure: [offset1][offset2][array1_length][array1_data...][array2_length][array2_data...]
+  
+  const recipientCount = recipients.length;
+  const amountCount = amounts.length;
+  
+  // Convert addresses to 32-byte hex strings (pad to 64 chars)
+  const paddedRecipients = recipients.map(addr => 
+    addr.toLowerCase().replace('0x', '').padStart(64, '0')
+  );
+  
+  // Convert amounts to 32-byte hex strings
+  const paddedAmounts = amounts.map(amount => {
+    // Convert amount string to bigint, then to hex
+    const amountWei = BigInt(amount);
+    return amountWei.toString(16).padStart(64, '0');
+  });
+  
+  // Calculate offsets (each offset is 32 bytes = 64 hex chars)
+  const offset1 = '0000000000000000000000000000000000000000000000000000000000000040'; // 64 bytes
+  const offset2 = (64 + 32 + recipientCount * 32).toString(16).padStart(64, '0'); // After first array
+  
+  // Encode recipient array
+  const recipientLength = recipientCount.toString(16).padStart(64, '0');
+  const recipientData = paddedRecipients.join('');
+  
+  // Encode amount array
+  const amountLength = amountCount.toString(16).padStart(64, '0');
+  const amountData = paddedAmounts.join('');
+  
+  // Combine all parts
+  const encoded = '0x' + offset1 + offset2 + recipientLength + recipientData + amountLength + amountData;
+  
+  return encoded;
+}
+
 export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPaymentModalProps) {
   const { user, wallet } = useAuth();
   
@@ -293,23 +334,36 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
       // Step 2: Execute bulk transfer
       console.log('📦 Executing bulk transfer...');
       
-      // BulkPayroll.bulkTransfer function selector
-      // We need to encode: bulkTransfer(address[] recipients, uint256[] amounts)
-      // For simplicity, we'll use a basic approach
-      const bulkTransferSelector = '0x12345678'; // Placeholder - would be calculated from function signature
+      // BulkPayroll.bulkTransfer function selector and parameter encoding
+      // Method signature: bulkTransfer(address[],uint256[])
+      // Method ID: 0x153a1f3e (from contract verification)
+      const bulkTransferSelector = '0x153a1f3e';
       
-      console.log('⚠️  Using simplified bulk transfer call');
+      // Extract addresses and amounts for encoding
+      const contractRecipients = recipients.map(r => r.address);
+      const contractAmounts = recipients.map(r => {
+        // Convert amount to wei (18 decimals for USDT)
+        const amountInWei = BigInt(Math.floor(parseFloat(r.amount) * 1e18));
+        return amountInWei.toString();
+      });
+      
+      // Encode parameters for bulkTransfer(address[] recipients, uint256[] amounts)
+      const encodedData = encodeBulkTransferData(contractRecipients, contractAmounts);
+      const callData = bulkTransferSelector + encodedData.slice(2); // Remove 0x from encoded data
+      
+      console.log('📦 Executing bulk transfer with proper ABI encoding');
       console.log('📊 Transaction summary:', {
         recipientCount: recipients.length,
         totalAmount: totalAmount,
-        gasEstimate: '0x30d40' // ~200000 gas
+        gasEstimate: '0x30d40', // ~200000 gas
+        callData: callData.slice(0, 42) + '...' // Show first 20 bytes of call data
       });
 
       const bulkTx = await walletService.sendTransaction(
         BULK_PAYROLL_ADDRESS,
         '0x0',
         '0x30d40', // Gas limit for bulk transfer (~200000)
-        bulkTransferSelector // Simplified data - needs proper ABI encoding in production
+        callData // Complete function call with encoded parameters
       );
 
       console.log('✅ Bulk payment transaction sent:', bulkTx);
