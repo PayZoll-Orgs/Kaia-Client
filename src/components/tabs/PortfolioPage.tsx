@@ -1,10 +1,11 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { QRCodeCanvas } from "qrcode.react";
-import { QrCodeIcon, ShareIcon, DocumentDuplicateIcon } from "@heroicons/react/24/outline";
+import { QrCodeIcon, ShareIcon, DocumentDuplicateIcon, CurrencyDollarIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/contexts/AuthContext";
 import SwitchAccountPopup from "@/components/SwitchAccountPopup";
 import WalletConnect from "@/components/WalletConnect";
+import { getUSDTBalance, requestUSDTFromFaucet, TokenBalance, FaucetResult } from "@/lib/token-service";
 
 interface Account {
   id: string;
@@ -20,6 +21,13 @@ export default function PortfolioPage() {
   const [showSwitchAccount, setShowSwitchAccount] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [notifications] = useState(3); // Mock notification count
+  
+  // USDT balance state
+  const [usdtBalance, setUsdtBalance] = useState<TokenBalance | null>(null);
+  const [loadingBalance, setLoadingBalance] = useState(false);
+  const [faucetLoading, setFaucetLoading] = useState(false);
+  const [faucetError, setFaucetError] = useState<string | null>(null);
+  const [faucetSuccess, setFaucetSuccess] = useState<string | null>(null);
   const [accounts] = useState([
     {
       id: '1',
@@ -46,6 +54,77 @@ export default function PortfolioPage() {
       isActive: false
     }
   ]);
+
+  // Load USDT balance when wallet is connected
+  const loadUSDTBalance = useCallback(async () => {
+    if (!wallet.address) {
+      setUsdtBalance(null);
+      return;
+    }
+
+    setLoadingBalance(true);
+    try {
+      console.log('🔍 Loading USDT balance for:', wallet.address);
+      const balance = await getUSDTBalance(wallet.address);
+      setUsdtBalance(balance);
+      console.log('✅ USDT balance loaded:', balance);
+    } catch (error) {
+      console.error('❌ Failed to load USDT balance:', error);
+      setUsdtBalance(null);
+    } finally {
+      setLoadingBalance(false);
+    }
+  }, [wallet.address]);
+
+  // Load balance when wallet connects
+  useEffect(() => {
+    if (wallet.isConnected && wallet.address) {
+      loadUSDTBalance();
+    }
+  }, [wallet.isConnected, wallet.address, loadUSDTBalance]);
+
+  // Handle faucet request
+  const handleFaucetRequest = async () => {
+    if (!wallet.address) {
+      setFaucetError('Wallet not connected');
+      return;
+    }
+
+    setFaucetLoading(true);
+    setFaucetError(null);
+    setFaucetSuccess(null);
+
+    try {
+      console.log('🚰 Requesting USDT from faucet...');
+      const result: FaucetResult = await requestUSDTFromFaucet(wallet.address);
+      
+      if (result.success) {
+        setFaucetSuccess(`Success! Transaction: ${result.transactionHash}`);
+        // Reload balance after successful faucet
+        setTimeout(() => {
+          loadUSDTBalance();
+        }, 5000); // Wait 5 seconds for transaction to be indexed
+      } else {
+        setFaucetError(result.error || 'Faucet request failed');
+      }
+    } catch (error) {
+      console.error('❌ Faucet request error:', error);
+      setFaucetError(error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      setFaucetLoading(false);
+    }
+  };
+
+  // Clear faucet messages after delay
+  useEffect(() => {
+    if (faucetSuccess || faucetError) {
+      const timer = setTimeout(() => {
+        setFaucetSuccess(null);
+        setFaucetError(null);
+      }, 10000); // Clear after 10 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [faucetSuccess, faucetError]);
 
   const handleAccountSwitch = useCallback((account: Account) => {
     console.log('Switching to account:', account);
@@ -392,7 +471,7 @@ export default function PortfolioPage() {
                 </div>
               </div>
 
-              {/* USDT Asset - Testnet */}
+              {/* USDT Asset - Real Balance */}
               <div className="bg-white rounded-2xl p-4 border border-gray-100">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -405,12 +484,43 @@ export default function PortfolioPage() {
                         <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
                           Testnet
                         </span>
+                        {loadingBalance && (
+                          <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                        )}
                       </div>
-                      <div className="text-gray-500 text-sm">0.00 USDT</div>
+                      <div className="text-gray-500 text-sm">
+                        {loadingBalance 
+                          ? 'Loading...' 
+                          : usdtBalance 
+                            ? `${usdtBalance.balance} USDT`
+                            : '0.00 USDT'
+                        }
+                      </div>
                     </div>
                   </div>
-                  <div className="text-gray-400 text-sm">Testnet</div>
+                  <button
+                    onClick={handleFaucetRequest}
+                    disabled={faucetLoading || !wallet.address}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <CurrencyDollarIcon className="w-4 h-4" />
+                    {faucetLoading ? 'Getting...' : 'Get USDT'}
+                  </button>
                 </div>
+                
+                {/* Faucet Status Messages */}
+                {faucetSuccess && (
+                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-green-800 text-sm font-medium">✅ Faucet Success!</p>
+                    <p className="text-green-700 text-xs mt-1 break-all">{faucetSuccess}</p>
+                  </div>
+                )}
+                {faucetError && (
+                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-800 text-sm font-medium">❌ Faucet Error</p>
+                    <p className="text-red-700 text-xs mt-1">{faucetError}</p>
+                  </div>
+                )}
               </div>
             </>
           ) : (
