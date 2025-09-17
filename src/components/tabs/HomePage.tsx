@@ -6,6 +6,7 @@ import { LineFriend } from "@/lib/line-auth";
 import LIFFQRScanner from "@/components/LIFFQRScanner";
 import PayAnyoneModal from "@/components/PayAnyoneModal";
 import QRPayModal from "@/components/QRPayModal";
+import SplitBillModal, { SplitBillData } from "@/components/SplitBillModal";
 import PayAnyonePopup from "@/components/PayAnyonePopup";
 import PastInteractionPopup from "@/components/PastInteractionPopup";
 import SplitBillPopup from "@/components/SplitBillPopup";
@@ -32,6 +33,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
   const [showPayAnyoneModal, setShowPayAnyoneModal] = useState(false);
   const [showPastInteraction, setShowPastInteraction] = useState(false);
   const [showSplitBill, setShowSplitBill] = useState(false);
+  const [showSplitBillModal, setShowSplitBillModal] = useState(false);
   const [showBulkPayment, setShowBulkPayment] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -56,6 +58,16 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
   const handlePaymentSuccess = (txHash: string, recipient: { displayName: string }, amount: string) => {
     console.log('Payment successful:', { txHash, recipient, amount });
     setPaymentSuccess(`Successfully sent ${amount} USDT to ${recipient.displayName}!`);
+    
+    // Clear success message after 5 seconds
+    setTimeout(() => {
+      setPaymentSuccess(null);
+    }, 5000);
+  };
+
+  const handleSplitBillSuccess = (splitData: SplitBillData) => {
+    console.log('Split bill created:', splitData);
+    setPaymentSuccess(`Split bill "${splitData.title}" created successfully!`);
     
     // Clear success message after 5 seconds
     setTimeout(() => {
@@ -207,7 +219,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
         <div className="bg-white rounded-2xl p-4 shadow-lg grid grid-cols-4 gap-3">
           <ActionButton onClick={() => setShowQRPay(true)} icon={<QrCodeIcon className="w-5 h-5" />} label="QR Pay" />
           <ActionButton onClick={() => setShowPayAnyoneModal(true)} icon={<UserIcon className="w-5 h-5" />} label="Pay anyone" />
-          <ActionButton onClick={() => setShowSplitBill(true)} icon={<ShareIcon className="w-5 h-5" />} label="Split bills" />
+          <ActionButton onClick={() => setShowSplitBillModal(true)} icon={<ShareIcon className="w-5 h-5" />} label="Split bills" />
           <ActionButton onClick={() => setShowBulkPayment(true)} icon={<DocumentDuplicateIcon className="w-5 h-5" />} label="Bulk payment" />
         </div>
       </section>
@@ -374,6 +386,12 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
         isOpen={showQRPay}
         onClose={() => setShowQRPay(false)}
         onSuccess={handlePaymentSuccess}
+      />
+
+      <SplitBillModal
+        isOpen={showSplitBillModal}
+        onClose={() => setShowSplitBillModal(false)}
+        onSuccess={handleSplitBillSuccess}
       />
       
       <PastInteractionPopup
