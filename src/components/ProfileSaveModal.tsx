@@ -64,12 +64,12 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
           
           // User exists, pre-fill and auto-complete
           setProfileData({
-            username: existingUser.username, // Their custom username
+            username: existingUser.userId, // Their custom username (backend calls it userId)
             displayName: existingUser.displayName || '',
             pictureUrl: existingUser.pictureUrl || '',
             statusMessage: existingUser.statusMessage || '',
             walletAddress: existingUser.walletAddress || wallet.address || '',
-            userId: existingUser.userId || lineUserId // LINE user ID
+            userId: existingUser.lineUserId || lineUserId // LINE user ID (backend calls it lineUserId)
           });
 
           // Auto-login existing user
@@ -205,12 +205,12 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
       console.log('🔄 Creating new user profile:', profileData);
 
       const profileToSave = {
-        username: profileData.username.trim(), // Custom username chosen by user
+        userId: profileData.username.trim(), // Custom username chosen by user (backend calls it userId)
         displayName: profileData.displayName || user?.displayName || 'Anonymous User',
         pictureUrl: profileData.pictureUrl || user?.pictureUrl || '',
         statusMessage: profileData.statusMessage || '',
         walletAddress: wallet.address || '',
-        userId: user.userId // LINE user ID for notifications
+        lineUserId: user.userId // LINE user ID for notifications (backend calls it lineUserId)
       };
 
       console.log('📤 Sending profile to backend:', profileToSave);
