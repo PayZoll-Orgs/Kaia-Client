@@ -62,16 +62,12 @@ export default function PayAnyoneModal({ isOpen, onClose, onSuccess }: PayAnyone
     }
   }, [wallet.address]);
 
-  // Search users
+  // Search users using getAllUsers endpoint and client-side filtering
   const searchUsers = useCallback(async (query: string) => {
-    if (!query || query.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const response = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.AUTH.SEARCH_USERS}?query=${encodeURIComponent(query)}`, {
+      console.log('🔍 Fetching all users from backend...');
+      const response = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.AUTH.GET_ALL_USERS}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -80,15 +76,28 @@ export default function PayAnyoneModal({ isOpen, onClose, onSuccess }: PayAnyone
 
       if (response.ok) {
         const users = await response.json();
+        console.log('📋 Retrieved users:', users.length);
+        
         // Filter out current user
-        const filteredUsers = users.filter((u: User) => u.userId !== user?.userId);
+        let filteredUsers = users.filter((u: User) => u.userId !== user?.userId);
+        
+        // Client-side search filtering if query provided
+        if (query && query.length >= 2) {
+          const searchTerm = query.toLowerCase();
+          filteredUsers = filteredUsers.filter((u: User) => 
+            u.displayName?.toLowerCase().includes(searchTerm) ||
+            u.userId?.toLowerCase().includes(searchTerm)
+          );
+        }
+        
         setSearchResults(filteredUsers);
+        console.log('✅ Filtered results:', filteredUsers.length);
       } else {
-        console.error('Failed to search users:', response.status);
+        console.error('Failed to fetch users:', response.status);
         setSearchResults([]);
       }
     } catch (error) {
-      console.error('Error searching users:', error);
+      console.error('Error fetching users:', error);
       setSearchResults([]);
     } finally {
       setIsLoading(false);
@@ -104,7 +113,7 @@ export default function PayAnyoneModal({ isOpen, onClose, onSuccess }: PayAnyone
     return () => clearTimeout(timer);
   }, [searchQuery, searchUsers]);
 
-  // Load balance when modal opens
+  // Load balance and initial users when modal opens
   useEffect(() => {
     if (isOpen) {
       loadBalance();
@@ -113,8 +122,10 @@ export default function PayAnyoneModal({ isOpen, onClose, onSuccess }: PayAnyone
       setSelectedUser(null);
       setAmount('');
       setError(null);
+      // Load all users initially
+      searchUsers('');
     }
-  }, [isOpen, loadBalance]);
+  }, [isOpen, loadBalance, searchUsers]);
 
   // Handle user selection
   const handleSelectUser = (user: User) => {

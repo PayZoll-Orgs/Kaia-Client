@@ -87,7 +87,7 @@ JSON
 }
 2. Get User by ID
 
-GET /api/auth/getUser/:username
+GET /api/auth/getUser/:userid
 
 URL Example:
 
