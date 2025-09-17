@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import SwitchAccountPopup from "@/components/SwitchAccountPopup";
 import WalletConnect from "@/components/WalletConnect";
 import { getUSDTBalance, requestUSDTFromFaucet, TokenBalance, FaucetResult } from "@/lib/token-service";
+import { getGaslessTransactionService } from "@/lib/gasless-transactions";
 
 interface Account {
   id: string;
@@ -28,6 +29,9 @@ export default function PortfolioPage() {
   const [faucetLoading, setFaucetLoading] = useState(false);
   const [faucetError, setFaucetError] = useState<string | null>(null);
   const [faucetSuccess, setFaucetSuccess] = useState<string | null>(null);
+  
+  // Fee delegation status
+  const [feeDelegationAvailable, setFeeDelegationAvailable] = useState<boolean | null>(null);
   const [accounts] = useState([
     {
       id: '1',
@@ -76,12 +80,26 @@ export default function PortfolioPage() {
     }
   }, [wallet.address]);
 
+  // Check fee delegation service status
+  const checkFeeDelegationService = useCallback(async () => {
+    try {
+      const gaslessService = getGaslessTransactionService();
+      const status = await gaslessService.getServiceStatus();
+      setFeeDelegationAvailable(status.available);
+      console.log('Fee delegation service status:', status);
+    } catch (error) {
+      console.error('Failed to check fee delegation service:', error);
+      setFeeDelegationAvailable(false);
+    }
+  }, []);
+
   // Load balance when wallet connects
   useEffect(() => {
     if (wallet.isConnected && wallet.address) {
       loadUSDTBalance();
+      checkFeeDelegationService();
     }
-  }, [wallet.isConnected, wallet.address, loadUSDTBalance]);
+  }, [wallet.isConnected, wallet.address, loadUSDTBalance, checkFeeDelegationService]);
 
   // Handle faucet request
   const handleFaucetRequest = async () => {
@@ -99,7 +117,8 @@ export default function PortfolioPage() {
       const result: FaucetResult = await requestUSDTFromFaucet(wallet.address);
       
       if (result.success) {
-        setFaucetSuccess(`Success! Transaction: ${result.transactionHash}`);
+        const gaslessIndicator = result.gasless ? ' ⚡ (Gasless)' : ' 💰 (Paid Gas)';
+        setFaucetSuccess(`Success! Transaction: ${result.transactionHash}${gaslessIndicator}`);
         // Reload balance after successful faucet
         setTimeout(() => {
           loadUSDTBalance();
@@ -439,6 +458,39 @@ export default function PortfolioPage() {
         {wallet.isConnected && (
           <div className="mt-8 px-4">
             <WalletConnect showBalance={true} compact={false} />
+          </div>
+        )}
+
+        {/* Fee Delegation Status */}
+        {wallet.isConnected && (
+          <div className="mt-8 px-4">
+            <div className="bg-white rounded-2xl p-4 border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                    <span className="text-purple-600 font-bold text-sm">⚡</span>
+                  </div>
+                  <div>
+                    <div className="text-gray-900 font-medium">Gasless Transactions</div>
+                    <div className="text-gray-500 text-sm">
+                      {feeDelegationAvailable === null 
+                        ? 'Checking...' 
+                        : feeDelegationAvailable 
+                          ? 'Available - No gas fees!' 
+                          : 'Unavailable - Regular gas fees apply'
+                      }
+                    </div>
+                  </div>
+                </div>
+                <div className={`w-3 h-3 rounded-full ${
+                  feeDelegationAvailable === null 
+                    ? 'bg-gray-300' 
+                    : feeDelegationAvailable 
+                      ? 'bg-green-500' 
+                      : 'bg-red-500'
+                }`}></div>
+              </div>
+            </div>
           </div>
         )}
 
