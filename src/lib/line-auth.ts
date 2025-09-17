@@ -147,14 +147,43 @@ export class LIFFAuth {
 
   static async scanQRCode(): Promise<string | null> {
     try {
+      // Ensure LIFF is initialized first
+      if (!this.initialized) {
+        console.log('⚠️ LIFF not initialized, attempting initialization...');
+        const initSuccess = await this.initialize();
+        if (!initSuccess) {
+          throw new Error('Failed to initialize LIFF');
+        }
+      }
+      
+      console.log('🔍 LIFFAuth.scanQRCode() - Pre-scan checks:', {
+        initialized: this.initialized,
+        isInClient: this.isInLineApp(),
+        isLoggedIn: this.isLoggedIn(),
+        liffAvailable: typeof liff !== 'undefined',
+        scanCodeV2Available: typeof liff?.scanCodeV2 === 'function'
+      });
+      
+      if (!this.isInLineApp()) {
+        throw new Error('QR code scanning is only available in LINE app');
+      }
+      
+      if (typeof liff?.scanCodeV2 !== 'function') {
+        throw new Error('LIFF scanCodeV2 not available - LIFF may not be properly initialized');
+      }
+      
+      console.log('🚀 Calling liff.scanCodeV2()...');
       const result = await liff.scanCodeV2();
+      console.log('📱 liff.scanCodeV2() result:', result);
+      
       return result?.value || null;
     } catch (error: unknown) {
-      console.error('LIFF QR scan error:', error);
+      console.error('❌ LIFF QR scan error:', error);
       
       // Handle user cancellation gracefully
       const err = error as { code?: string };
       if (err.code === 'CANCEL') {
+        console.log('ℹ️ User cancelled QR scan');
         return null;
       }
       
