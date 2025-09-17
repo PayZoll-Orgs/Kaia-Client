@@ -119,7 +119,7 @@ export default function ProfileSaveModal({ isOpen, onClose, onSave }: ProfileSav
     };
 
     checkExistingUser();
-  }, [isOpen, user?.userId, wallet.address, onSave, onClose]);
+  }, [isOpen, user?.userId, user?.displayName, user?.pictureUrl, wallet.address, onSave, onClose]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
