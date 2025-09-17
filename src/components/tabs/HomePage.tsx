@@ -7,10 +7,10 @@ import LIFFQRScanner from "@/components/LIFFQRScanner";
 import PayAnyoneModal from "@/components/PayAnyoneModal";
 import QRPayModal from "@/components/QRPayModal";
 import SplitBillModal, { SplitBillData } from "@/components/SplitBillModal";
+import BulkPaymentModal, { BulkPaymentData } from "@/components/BulkPaymentModal";
 import PayAnyonePopup from "@/components/PayAnyonePopup";
 import PastInteractionPopup from "@/components/PastInteractionPopup";
 import SplitBillPopup from "@/components/SplitBillPopup";
-import BulkPaymentPopup from "@/components/BulkPaymentPopup";
 import FriendsPopup from "@/components/FriendsPopup";
 
 interface Contact {
@@ -34,7 +34,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
   const [showPastInteraction, setShowPastInteraction] = useState(false);
   const [showSplitBill, setShowSplitBill] = useState(false);
   const [showSplitBillModal, setShowSplitBillModal] = useState(false);
-  const [showBulkPayment, setShowBulkPayment] = useState(false);
+  const [showBulkPaymentModal, setShowBulkPaymentModal] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState<string | null>(null);
@@ -75,6 +75,16 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
     }, 5000);
   };
 
+  const handleBulkPaymentSuccess = (paymentData: BulkPaymentData) => {
+    console.log('Bulk payment successful:', paymentData);
+    setPaymentSuccess(`Successfully sent ${paymentData.totalAmount} USDT to ${paymentData.recipients.length} recipients!`);
+    
+    // Clear success message after 5 seconds
+    setTimeout(() => {
+      setPaymentSuccess(null);
+    }, 5000);
+  };
+
   const handleContactSelect = (contact: Contact) => {
     setSelectedContact(contact);
     setShowPayAnyone(false);
@@ -101,11 +111,6 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
   const handleSplitBill = (contacts: Contact[], totalAmount: number) => {
     console.log("Split bill:", contacts, totalAmount);
     // Handle split bill logic
-  };
-
-  const handleBulkPayment = (contacts: Contact[], totalAmount: number) => {
-    console.log("Bulk payment:", contacts, totalAmount);
-    // Handle bulk payment logic
   };
 
   const userWalletAddress = "0x1234567890abcdef1234567890abcdef12345678";
@@ -220,7 +225,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
           <ActionButton onClick={() => setShowQRPay(true)} icon={<QrCodeIcon className="w-5 h-5" />} label="QR Pay" />
           <ActionButton onClick={() => setShowPayAnyoneModal(true)} icon={<UserIcon className="w-5 h-5" />} label="Pay anyone" />
           <ActionButton onClick={() => setShowSplitBillModal(true)} icon={<ShareIcon className="w-5 h-5" />} label="Split bills" />
-          <ActionButton onClick={() => setShowBulkPayment(true)} icon={<DocumentDuplicateIcon className="w-5 h-5" />} label="Bulk payment" />
+          <ActionButton onClick={() => setShowBulkPaymentModal(true)} icon={<DocumentDuplicateIcon className="w-5 h-5" />} label="Bulk payment" />
         </div>
       </section>
 
@@ -393,6 +398,12 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
         onClose={() => setShowSplitBillModal(false)}
         onSuccess={handleSplitBillSuccess}
       />
+
+      <BulkPaymentModal
+        isOpen={showBulkPaymentModal}
+        onClose={() => setShowBulkPaymentModal(false)}
+        onSuccess={handleBulkPaymentSuccess}
+      />
       
       <PastInteractionPopup
         isOpen={showPastInteraction}
@@ -408,11 +419,6 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
         onConfirmSplit={handleSplitBill}
       />
       
-      <BulkPaymentPopup
-        isOpen={showBulkPayment}
-        onClose={() => setShowBulkPayment(false)}
-        onConfirmBulkPayment={handleBulkPayment}
-      />
       
       <FriendsPopup
         isOpen={showFriends}
