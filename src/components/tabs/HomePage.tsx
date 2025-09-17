@@ -4,6 +4,7 @@ import { QrCodeIcon, UserIcon, ShareIcon, DocumentDuplicateIcon } from "@heroico
 import { useAuth } from "@/contexts/AuthContext";
 import { LineFriend } from "@/lib/line-auth";
 import LIFFQRScanner from "@/components/LIFFQRScanner";
+import PayAnyoneModal from "@/components/PayAnyoneModal";
 import PayAnyonePopup from "@/components/PayAnyonePopup";
 import PastInteractionPopup from "@/components/PastInteractionPopup";
 import SplitBillPopup from "@/components/SplitBillPopup";
@@ -26,11 +27,13 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
   const { user, friends, logout } = useAuth();
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showPayAnyone, setShowPayAnyone] = useState(false);
+  const [showPayAnyoneModal, setShowPayAnyoneModal] = useState(false);
   const [showPastInteraction, setShowPastInteraction] = useState(false);
   const [showSplitBill, setShowSplitBill] = useState(false);
   const [showBulkPayment, setShowBulkPayment] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState<string | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [notifications] = useState(3); // Mock notification count
 
@@ -46,6 +49,16 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
   const handleQRScan = (result: string) => {
     console.log("QR Code scanned:", result);
     // Handle the scanned QR code (blockchain address)
+  };
+
+  const handlePaymentSuccess = (txHash: string, recipient: { displayName: string }, amount: string) => {
+    console.log('Payment successful:', { txHash, recipient, amount });
+    setPaymentSuccess(`Successfully sent ${amount} USDT to ${recipient.displayName}!`);
+    
+    // Clear success message after 5 seconds
+    setTimeout(() => {
+      setPaymentSuccess(null);
+    }, 5000);
   };
 
   const handleContactSelect = (contact: Contact) => {
@@ -140,6 +153,18 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
 
   return (
     <main className="mx-auto max-w-md">
+      {/* Success Notification */}
+      {paymentSuccess && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 max-w-sm">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-sm font-medium">{paymentSuccess}</span>
+          </div>
+        </div>
+      )}
+
       <header className="pt-8 pb-8">
         {/* Top Icons */}
         <div className="flex items-center justify-between px-6 mb-8">
@@ -179,7 +204,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
       <section className="px-6 mb-6">
         <div className="bg-white rounded-2xl p-4 shadow-lg grid grid-cols-4 gap-3">
           <ActionButton onClick={() => setShowQRScanner(true)} icon={<QrCodeIcon className="w-5 h-5" />} label="QR Code" />
-          <ActionButton onClick={() => setShowPayAnyone(true)} icon={<UserIcon className="w-5 h-5" />} label="Pay anyone" />
+          <ActionButton onClick={() => setShowPayAnyoneModal(true)} icon={<UserIcon className="w-5 h-5" />} label="Pay anyone" />
           <ActionButton onClick={() => setShowSplitBill(true)} icon={<ShareIcon className="w-5 h-5" />} label="Split bills" />
           <ActionButton onClick={() => setShowBulkPayment(true)} icon={<DocumentDuplicateIcon className="w-5 h-5" />} label="Bulk payment" />
         </div>
@@ -335,6 +360,12 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
         isOpen={showPayAnyone}
         onClose={() => setShowPayAnyone(false)}
         onSelectContact={handleContactSelect}
+      />
+
+      <PayAnyoneModal
+        isOpen={showPayAnyoneModal}
+        onClose={() => setShowPayAnyoneModal(false)}
+        onSuccess={handlePaymentSuccess}
       />
       
       <PastInteractionPopup
