@@ -105,14 +105,46 @@ export async function transferUSDT(
         gasless: true
       };
     } else {
-      console.log('⚠️ Gasless transfer failed, falling back to regular transaction');
-      // Fallback to regular transaction
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      const mockTxHash = '0x' + Math.random().toString(16).substring(2, 66);
+      console.log('⚠️ Gasless transfer failed, using LIFF wallet for regular transaction');
+      
+      // Import wallet service dynamically to avoid SSR issues
+      const { WalletService } = await import('./wallet-service');
+      const walletService = WalletService.getInstance();
+      
+      const walletState = walletService.getState();
+      if (!walletState.isConnected || !walletState.address) {
+        throw new Error('LIFF wallet not connected');
+      }
+      
+      // Convert amount to wei (USDT has 6 decimals)
+      const amountInWei = (parseFloat(amount) * Math.pow(10, 6)).toString();
+      
+      // Create ERC20 transfer transaction data
+      // Function signature: transfer(address,uint256)
+      const transferMethodId = '0xa9059cbb'; // First 4 bytes of keccak256("transfer(address,uint256)")
+      const paddedToAddress = toAddress.replace('0x', '').padStart(64, '0');
+      const paddedAmount = parseInt(amountInWei).toString(16).padStart(64, '0');
+      const transactionData = transferMethodId + paddedToAddress + paddedAmount;
+      
+      console.log('📝 Creating ERC20 transfer transaction:', {
+        contract: CONFIG.USDT_ADDRESS,
+        data: transactionData,
+        amountInWei
+      });
+      
+      // Send transaction through LIFF wallet
+      const txHash = await walletService.sendTransaction(
+        CONFIG.USDT_ADDRESS, // USDT contract address
+        '0x0', // No native token value for ERC20 transfer
+        '0x15f90', // Gas limit for ERC20 transfer (~90000)
+        transactionData // ERC20 transfer function call data
+      );
+      
+      console.log('✅ LIFF wallet transaction sent:', txHash);
       
       return {
         success: true,
-        transactionHash: mockTxHash,
+        transactionHash: txHash,
         gasless: false
       };
     }

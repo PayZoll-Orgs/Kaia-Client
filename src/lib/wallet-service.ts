@@ -471,18 +471,30 @@ export class WalletService {
   }
 
   // Send transaction
-  async sendTransaction(to: string, value: string, gasLimit?: string): Promise<string> {
+  async sendTransaction(to: string, value: string, gasLimit?: string, data?: string): Promise<string> {
     if (!this.walletProvider || !this.walletState.address) {
       throw new Error('Wallet not connected');
     }
 
     try {
-      const transaction = {
+      const transaction: {
+        from: string;
+        to: string;
+        value: string;
+        gas: string;
+        data?: string;
+      } = {
         from: this.walletState.address,
         to,
         value, // in hex format
         gas: gasLimit || '0x5208', // Default gas limit for simple transfer
       };
+
+      // Add data for smart contract calls
+      if (data) {
+        transaction.data = data;
+        transaction.gas = gasLimit || '0x15f90'; // Higher gas limit for contract interactions
+      }
 
       const txHash = await this.walletProvider.request({
         method: 'kaia_sendTransaction',

@@ -32,7 +32,7 @@ interface AuthContextType {
   signMessage: (message: string) => Promise<string>;
   connectAndSign: (message: string) => Promise<{ account: string; signature: string }>;
   refreshWalletData: () => Promise<void>;
-  sendTransaction: (to: string, value: string, gasLimit?: string) => Promise<string>;
+  sendTransaction: (to: string, value: string, gasLimit?: string, data?: string) => Promise<string>;
   getTokenBalance: (contractAddress: string) => Promise<string>;
   
   // Onboarding Actions
@@ -277,9 +277,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     },
 
-    sendTransaction: async (to: string, value: string, gasLimit?: string) => {
+    sendTransaction: async (to: string, value: string, gasLimit?: string, data?: string) => {
       try {
-        return await walletService.sendTransaction(to, value, gasLimit);
+        return await walletService.sendTransaction(to, value, gasLimit, data);
       } catch (error) {
         console.error('Transaction failed:', error);
         throw error;
