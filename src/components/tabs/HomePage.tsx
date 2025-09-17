@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { LineFriend } from "@/lib/line-auth";
 import LIFFQRScanner from "@/components/LIFFQRScanner";
 import PayAnyoneModal from "@/components/PayAnyoneModal";
+import QRPayModal from "@/components/QRPayModal";
 import PayAnyonePopup from "@/components/PayAnyonePopup";
 import PastInteractionPopup from "@/components/PastInteractionPopup";
 import SplitBillPopup from "@/components/SplitBillPopup";
@@ -26,6 +27,7 @@ interface HomePageProps {
 export default function HomePage({ onTabChange }: HomePageProps = {}) {
   const { user, friends, logout } = useAuth();
   const [showQRScanner, setShowQRScanner] = useState(false);
+  const [showQRPay, setShowQRPay] = useState(false);
   const [showPayAnyone, setShowPayAnyone] = useState(false);
   const [showPayAnyoneModal, setShowPayAnyoneModal] = useState(false);
   const [showPastInteraction, setShowPastInteraction] = useState(false);
@@ -203,7 +205,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
       {/* Action Buttons */}
       <section className="px-6 mb-6">
         <div className="bg-white rounded-2xl p-4 shadow-lg grid grid-cols-4 gap-3">
-          <ActionButton onClick={() => setShowQRScanner(true)} icon={<QrCodeIcon className="w-5 h-5" />} label="QR Code" />
+          <ActionButton onClick={() => setShowQRPay(true)} icon={<QrCodeIcon className="w-5 h-5" />} label="QR Pay" />
           <ActionButton onClick={() => setShowPayAnyoneModal(true)} icon={<UserIcon className="w-5 h-5" />} label="Pay anyone" />
           <ActionButton onClick={() => setShowSplitBill(true)} icon={<ShareIcon className="w-5 h-5" />} label="Split bills" />
           <ActionButton onClick={() => setShowBulkPayment(true)} icon={<DocumentDuplicateIcon className="w-5 h-5" />} label="Bulk payment" />
@@ -365,6 +367,12 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
       <PayAnyoneModal
         isOpen={showPayAnyoneModal}
         onClose={() => setShowPayAnyoneModal(false)}
+        onSuccess={handlePaymentSuccess}
+      />
+
+      <QRPayModal
+        isOpen={showQRPay}
+        onClose={() => setShowQRPay(false)}
         onSuccess={handlePaymentSuccess}
       />
       
