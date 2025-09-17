@@ -36,14 +36,20 @@ export async function getUSDTBalance(walletAddress: string): Promise<TokenBalanc
     // Get real USDT balance from blockchain - this returns formatted balance
     const formattedBalance = await walletService.getTokenBalance(CONFIG.USDT_ADDRESS, walletAddress);
     const balance = parseFloat(formattedBalance).toFixed(2);
-    const rawBalance = Math.round(parseFloat(formattedBalance) * Math.pow(10, 6)).toString();
+    const rawBalance = Math.round(parseFloat(formattedBalance) * Math.pow(10, 18)).toString();
     
     console.log('✅ Real USDT balance:', balance, 'USDT');
+    console.log('🔍 Balance details:', {
+      formatted: formattedBalance,
+      display: balance,
+      rawWei: rawBalance,
+      decimals: 18
+    });
     
     return {
       balance: balance,
       rawBalance: rawBalance,
-      decimals: 6,
+      decimals: 18, // MyDummyTokenWithFaucet uses 18 decimals (KIP7 standard)
       symbol: "USDT",
       contractAddress: CONFIG.USDT_ADDRESS
     };
@@ -61,60 +67,86 @@ export async function getUSDTBalance(walletAddress: string): Promise<TokenBalanc
 }
 
 export async function requestUSDTFromFaucet(walletAddress: string): Promise<FaucetResult> {
-  console.log('🚰 Requesting USDT from faucet (with fee delegation)...');
+  console.log('🚰 Requesting USDT from faucet using LIFF wallet only...');
+  console.log('🔍 Wallet address:', walletAddress);
+  console.log('🔍 Target contract:', CONFIG.USDT_ADDRESS);
   
   try {
-    // Try gasless transaction first
-    const gaslessService = getGaslessTransactionService();
-    const gaslessResult = await gaslessService.executeGaslessFaucet(walletAddress);
+    // COMMENTED OUT: Gasless service to focus on direct LIFF wallet transactions
+    // const gaslessService = getGaslessTransactionService();
+    // const gaslessResult = await gaslessService.executeGaslessFaucet(walletAddress);
     
-    if (gaslessResult.success) {
-      console.log('✅ Gasless faucet successful!');
-      return {
-        success: true,
-        transactionHash: gaslessResult.transactionHash,
-        amount: "50.00",
-        gasless: true
-      };
-    } else {
-      console.log('⚠️ Gasless faucet failed, using LIFF wallet for regular faucet transaction');
-      
-      // Import wallet service dynamically to avoid SSR issues
-      const { WalletService } = await import('./wallet-service');
-      const walletService = WalletService.getInstance();
-      
-      const walletState = walletService.getState();
-      if (!walletState.isConnected || !walletState.address) {
-        throw new Error('LIFF wallet not connected');
-      }
-      
-      // Create faucet transaction data (calling faucet() function)
-      // Function signature: faucet()
-      const faucetMethodId = '0xde5f72fd'; // First 4 bytes of keccak256("faucet()")
-      
-      console.log('📝 Creating faucet transaction:', {
-        contract: CONFIG.USDT_ADDRESS,
-        data: faucetMethodId,
-        from: walletState.address
-      });
-      
-      // Send faucet transaction through LIFF wallet
-      const txHash = await walletService.sendTransaction(
-        CONFIG.USDT_ADDRESS, // USDT contract address
-        '0x0', // No native token value for faucet call
-        '0x15f90', // Gas limit for faucet call (~90000)
-        faucetMethodId // Faucet function call data
-      );
-      
-      console.log('✅ LIFF wallet faucet transaction sent:', txHash);
-      
-      return {
-        success: true,
-        transactionHash: txHash,
-        amount: "50.00", // Standard faucet amount
-        gasless: false
-      };
+    console.log('🔄 Skipping gasless service - using LIFF wallet directly');
+    
+    // Import wallet service dynamically to avoid SSR issues
+    const { WalletService } = await import('./wallet-service');
+    const walletService = WalletService.getInstance();
+    
+    console.log('🔍 Checking wallet connection status...');
+    const walletState = walletService.getState();
+    console.log('📊 Wallet state:', {
+      isConnected: walletState.isConnected,
+      address: walletState.address,
+      walletType: walletState.walletType,
+      isLoading: walletState.isLoading,
+      error: walletState.error
+    });
+    
+    if (!walletState.isConnected || !walletState.address) {
+      console.error('❌ LIFF wallet not connected:', walletState);
+      throw new Error('LIFF wallet not connected');
     }
+    
+    // Verify addresses match
+    if (walletState.address.toLowerCase() !== walletAddress.toLowerCase()) {
+      console.warn('⚠️ Address mismatch:', {
+        requested: walletAddress,
+        connected: walletState.address
+      });
+    }
+    
+    // Create faucet transaction data (calling faucet() function)
+    // Function signature: faucet() - no parameters
+    const faucetMethodId = '0xde5f72fd'; // First 4 bytes of keccak256("faucet()")
+    
+    console.log('📝 Creating faucet transaction with parameters:', {
+      contract: CONFIG.USDT_ADDRESS,
+      methodId: faucetMethodId,
+      methodName: 'faucet()',
+      from: walletState.address,
+      to: CONFIG.USDT_ADDRESS,
+      value: '0x0',
+      gasLimit: '0x15f90',
+      data: faucetMethodId
+    });
+    
+    console.log('🔍 Contract analysis:');
+    console.log('  - Contract: MyDummyTokenWithFaucet');
+    console.log('  - Function: faucet() external');
+    console.log('  - No parameters required');
+    console.log('  - Cooldown: 24 hours');
+    console.log('  - Amount: 100 tokens (with 18 decimals)');
+    console.log('  - Requires contract to have balance');
+    
+    // Send transaction through LIFF wallet
+    console.log('🚀 Sending faucet transaction through LIFF wallet...');
+    const txHash = await walletService.sendTransaction(
+      CONFIG.USDT_ADDRESS, // USDT contract address
+      '0x0', // No native token value for faucet call
+      '0x15f90', // Gas limit for faucet call (~90000)
+      faucetMethodId // Faucet function call data
+    );
+    
+    console.log('✅ LIFF wallet faucet transaction sent successfully!');
+    console.log('📜 Transaction hash:', txHash);
+    console.log('🔍 View on Kaiascan:', `https://kairos.kaiascope.com/tx/${txHash}`);
+    
+    return {
+      success: true,
+      transactionHash: txHash,
+      amount: "100.00", // Based on contract FAUCET_AMOUNT
+      gasless: false
+    };
   } catch (error) {
     console.error('❌ Faucet request failed:', error);
     return {
@@ -130,44 +162,37 @@ export async function transferUSDT(
   toAddress: string,
   amount: string
 ): Promise<TransferResult> {
-  console.log('💸 Transferring USDT (with fee delegation)...', {
+  console.log('💸 Transferring USDT using LIFF wallet only...', {
     from: fromAddress,
     to: toAddress,
     amount
   });
   
   try {
-    // Try gasless transaction first
-    const gaslessService = getGaslessTransactionService();
-    const gaslessResult = await gaslessService.executeGaslessTransfer(
-      fromAddress,
-      toAddress,
-      amount
-    );
+    // COMMENTED OUT: Gasless service to focus on direct LIFF wallet transactions
+    // const gaslessService = getGaslessTransactionService();
+    // const gaslessResult = await gaslessService.executeGaslessTransfer(fromAddress, toAddress, amount);
     
-    if (gaslessResult.success) {
-      console.log('✅ Gasless transfer successful!');
-      return {
-        success: true,
-        transactionHash: gaslessResult.transactionHash,
-        gasless: true
-      };
-    } else {
-      console.log('⚠️ Gasless transfer failed, using LIFF wallet for regular transaction');
-      
-      // Import wallet service dynamically to avoid SSR issues
-      const { WalletService } = await import('./wallet-service');
-      const walletService = WalletService.getInstance();
-      
-      const walletState = walletService.getState();
-      if (!walletState.isConnected || !walletState.address) {
-        throw new Error('LIFF wallet not connected');
-      }
-      
-      // Convert amount to wei (USDT has 6 decimals)
-      const amountInWei = Math.round(parseFloat(amount) * Math.pow(10, 6));
-      
-      // Create ERC20 transfer transaction data
+    console.log('🔄 Skipping gasless service - using LIFF wallet directly for P2P transfer');
+    
+    // Import wallet service dynamically to avoid SSR issues
+    const { WalletService } = await import('./wallet-service');
+    const walletService = WalletService.getInstance();
+    
+    const walletState = walletService.getState();
+    console.log('🔍 P2P Transfer - Wallet state:', walletState);
+    
+    if (!walletState.isConnected || !walletState.address) {
+      throw new Error('LIFF wallet not connected');
+    }
+    
+    // Convert amount to wei (MyDummyTokenWithFaucet uses 18 decimals)
+    const amountInWei = Math.round(parseFloat(amount) * Math.pow(10, 18));
+    console.log('💰 Amount conversion:', {
+      originalAmount: amount,
+      amountInWei: amountInWei,
+      decimals: 18
+    });      // Create ERC20 transfer transaction data
       // Function signature: transfer(address,uint256)
       const transferMethodId = 'a9059cbb'; // First 4 bytes of keccak256("transfer(address,uint256)")
       const paddedToAddress = toAddress.replace('0x', '').toLowerCase().padStart(64, '0');
@@ -195,7 +220,6 @@ export async function transferUSDT(
         transactionHash: txHash,
         gasless: false
       };
-    }
   } catch (error) {
     console.error('❌ USDT transfer failed:', error);
     return {

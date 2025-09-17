@@ -396,10 +396,16 @@ export class WalletService {
     try {
       const balanceHex = await this.walletProvider.getErc20TokenBalance(contractAddress, account);
       
-      // For USDT (6 decimals), convert from micro USDT to USDT
+      // For USDT (18 decimals - MyDummyTokenWithFaucet uses KIP7 standard), convert from wei to USDT
       if (contractAddress.toLowerCase() === TESTNET_USDT_CONTRACT.toLowerCase()) {
         const balanceWei = BigInt(balanceHex);
-        const balanceUsdt = Number(balanceWei) / Math.pow(10, 6);
+        const balanceUsdt = Number(balanceWei) / Math.pow(10, 18);
+        console.log('🔍 USDT Balance conversion:', {
+          balanceHex,
+          balanceWei: balanceWei.toString(),
+          balanceUsdt,
+          decimals: 18
+        });
         return balanceUsdt.toFixed(2);
       }
       
@@ -472,7 +478,20 @@ export class WalletService {
 
   // Send transaction
   async sendTransaction(to: string, value: string, gasLimit?: string, data?: string): Promise<string> {
+    console.log('🔄 WalletService.sendTransaction called with parameters:', {
+      to,
+      value,
+      gasLimit,
+      data,
+      from: this.walletState.address
+    });
+
     if (!this.walletProvider || !this.walletState.address) {
+      console.error('❌ Wallet not ready:', {
+        hasProvider: !!this.walletProvider,
+        hasAddress: !!this.walletState.address,
+        walletState: this.walletState
+      });
       throw new Error('Wallet not connected');
     }
 
@@ -494,16 +513,41 @@ export class WalletService {
       if (data) {
         transaction.data = data;
         transaction.gas = gasLimit || '0x15f90'; // Higher gas limit for contract interactions
+        console.log('📝 Smart contract call detected - updated transaction:', transaction);
       }
+
+      console.log('🚀 Sending transaction via wallet provider:', {
+        method: 'kaia_sendTransaction',
+        transaction: transaction,
+        providerType: this.walletState.walletType
+      });
 
       const txHash = await this.walletProvider.request({
         method: 'kaia_sendTransaction',
         params: [transaction]
       }) as string;
 
+      console.log('✅ Transaction sent successfully!', {
+        txHash,
+        kaiascanUrl: `https://kairos.kaiascope.com/tx/${txHash}`
+      });
+
       return txHash;
     } catch (error) {
-      console.error('Transaction failed:', error);
+      console.error('❌ Transaction failed with detailed error:', {
+        error: error,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorStack: error instanceof Error ? error.stack : 'No stack trace',
+        transaction: {
+          to,
+          value,
+          gasLimit,
+          data,
+          from: this.walletState.address
+        },
+        walletProvider: !!this.walletProvider,
+        walletType: this.walletState.walletType
+      });
       throw error;
     }
   }
