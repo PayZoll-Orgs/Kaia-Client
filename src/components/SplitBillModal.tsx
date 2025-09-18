@@ -340,6 +340,10 @@ export default function SplitBillModal({ isOpen, onClose, onSuccess }: SplitBill
         contributorIds: participants.map(p => p.userId), // All participants who owe money
         amounts: participants.map(p => parseFloat(p.amount)), // Individual amounts owed
         transactionHash: txHash, // Transaction hash from blockchain
+        title: title, // Bill title
+        description: description || '', // Bill description (optional)
+        totalAmount: parseFloat(totalAmount), // Total bill amount
+        deadline: deadline ? new Date(deadline) : undefined, // Payment deadline if set
         status: participants.map(p => ({
           contributorId: p.userId,
           paid: false // Initially all payments are unpaid
@@ -347,6 +351,14 @@ export default function SplitBillModal({ isOpen, onClose, onSuccess }: SplitBill
       };
 
       console.log('📤 Recording split payment in backend:', splitPaymentData);
+      console.log('🔍 DEBUGGING - Full request details:');
+      console.log('URL:', `${CONFIG.BACKEND_URL}${API_ENDPOINTS.SPLIT.RECORD}`);
+      console.log('Method: POST');
+      console.log('Headers:', {
+        'Content-Type': 'application/json',
+      });
+      console.log('Body (stringified):', JSON.stringify(splitPaymentData, null, 2));
+      console.log('Body (raw object):', splitPaymentData);
 
       // Record in backend via split payment API
       const recordResponse = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.SPLIT.RECORD}`, {
