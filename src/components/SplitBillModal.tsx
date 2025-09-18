@@ -101,7 +101,7 @@ export default function SplitBillModal({ isOpen, onClose, onSuccess }: SplitBill
       const response = await fetch(`${CONFIG.BACKEND_URL}/api/auth/getAllUsers`);
       if (response.ok) {
         const users: User[] = await response.json();
-        // Filter out current user
+        // Filter out current user for participants selection
         const filteredUsers = users.filter(u => u.walletAddress.toLowerCase() !== wallet.address?.toLowerCase());
         setAvailableUsers(filteredUsers);
       } else {
@@ -334,9 +334,25 @@ export default function SplitBillModal({ isOpen, onClose, onSuccess }: SplitBill
         deadline: deadline ? new Date(deadline) : undefined
       };
 
+      // Get current user's userId from backend
+      let currentUserBackendId = userProfile?.userId;
+      if (!currentUserBackendId) {
+        // Fallback: fetch current user from all users API
+        try {
+          const allUsersResponse = await fetch(`${CONFIG.BACKEND_URL}/api/auth/getAllUsers`);
+          if (allUsersResponse.ok) {
+            const allUsers: User[] = await allUsersResponse.json();
+            const currentUser = allUsers.find(u => u.walletAddress.toLowerCase() === wallet.address?.toLowerCase());
+            currentUserBackendId = currentUser?.userId;
+          }
+        } catch (error) {
+          console.error('Failed to get current user ID:', error);
+        }
+      }
+
       // Prepare backend API data
       const splitPaymentData = {
-        payeeId: userProfile?.userId, // Current user's backend userId (person who paid)
+        payeeId: currentUserBackendId, // Current user's backend userId (person who paid)
         contributorIds: participants.map(p => p.userId), // All participants who owe money
         amounts: participants.map(p => parseFloat(p.amount)), // Individual amounts owed
         transactionHash: txHash, // Transaction hash from blockchain
