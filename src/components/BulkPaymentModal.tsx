@@ -24,11 +24,13 @@ interface User {
   pictureUrl?: string;
   statusMessage?: string;
   userId: string;
+  lineUserId: string;
 }
 
 interface BulkRecipient {
   id: string;
   userId: string;
+  username: string;
   address: string;
   name: string;
   amount: string;
@@ -137,9 +139,9 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
       const response = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.AUTH.GET_ALL_USERS}`);
       if (response.ok) {
         const users: User[] = await response.json();
-        // Filter out current user
+        // Filter out current user using lineUserId
         const filteredUsers = users.filter(u => 
-          u.walletAddress.toLowerCase() !== wallet.address?.toLowerCase()
+          u.lineUserId !== user?.userId
         );
         setAvailableUsers(filteredUsers);
       } else {
@@ -152,7 +154,7 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
     } finally {
       setLoadingUsers(false);
     }
-  }, [wallet.address]);
+  }, [user?.userId]);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -196,6 +198,7 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
     const newRecipients: BulkRecipient[] = selectedUsers.map(user => ({
       id: user._id,
       userId: user.userId,
+      username: user.username,
       address: user.walletAddress,
       name: user.displayName,
       amount: '0'
@@ -370,6 +373,36 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
 
       // Record bulk payment in backend
       console.log('📝 Recording bulk payment in backend...');
+      
+      // Get current user's username from backend by finding user with matching lineUserId
+      let senderUsername = user?.userId; // fallback to LINE userId
+      
+      try {
+        console.log('🔍 Fetching all users to find sender username...');
+        const usersResponse = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.AUTH.GET_ALL_USERS}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (usersResponse.ok) {
+          const allUsers = await usersResponse.json();
+          const currentUser = allUsers.find((u: User) => u.lineUserId === user?.userId);
+          if (currentUser) {
+            senderUsername = currentUser.username;
+            console.log('✅ Found sender username:', senderUsername);
+          } else {
+            console.warn('⚠️ Current user not found in backend, using fallback');
+          }
+        } else {
+          console.warn('⚠️ Failed to fetch users, using fallback username');
+        }
+      } catch (error) {
+        console.error('❌ Error fetching users:', error);
+        console.log('⚠️ Using fallback username');
+      }
+      
       const bulkPaymentData: BulkPaymentData = {
         id: `bulk_${bulkTx.slice(2, 10)}`,
         recipients,
@@ -384,14 +417,9 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          payerId: user.userId,
-          recipients: recipients.map(r => ({
-            userId: r.userId,
-            amount: parseFloat(r.amount)
-          })),
-          totalAmount: parseFloat(totalAmount),
-          currency: 'USDT',
-          contractAddress: BULK_PAYROLL_ADDRESS,
+          senderId: senderUsername, // Use the found username
+          receiverIds: recipients.map(r => r.username), // Array of usernames
+          amounts: recipients.map(r => parseFloat(r.amount)), // Array of amounts
           transactionHash: bulkTx,
           status: 'completed'
         }),
