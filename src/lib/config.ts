@@ -37,7 +37,8 @@ export const API_ENDPOINTS = {
     ADD_USER: '/api/auth/addUser',           // POST - Create new user
     GET_USER: '/api/auth/getUser',           // GET - Get user by username (/api/auth/getUser/:username)
     SEARCH_USERS: '/api/auth/searchUsers',   // GET - Search users by query  
-    GET_ALL_USERS: '/api/auth/getAllUsers'   // GET - Get all users
+    GET_ALL_USERS: '/api/auth/getAllUsers',  // GET - Get all users
+    GET_MY_PROFILE: '/api/auth/getMyProfile' // GET - Get user profile by lineUserId (/api/auth/getMyProfile/:lineUserId)
   },
   
   // P2P routes (from backend.md)

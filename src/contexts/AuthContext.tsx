@@ -4,6 +4,19 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { LineAuth, AuthState, LineUser, LineFriend } from '@/lib/line-auth';
 import { WalletService, WalletState } from '@/lib/wallet-service';
 import { getWalletBackendService } from '@/lib/wallet-backend';
+import { CONFIG, API_ENDPOINTS } from '@/lib/config';
+
+// Backend User Profile Interface (matches the backend schema)
+export interface BackendUser {
+  _id: string;
+  userId: string;
+  displayName: string;
+  pictureUrl?: string;
+  statusMessage?: string;
+  walletAddress: string;
+  lineUserId: string;
+  favourites?: string[];
+}
 
 // Context interface
 interface AuthContextType {
@@ -11,6 +24,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: LineUser | null;
+  userProfile: BackendUser | null; // Added backend user profile
   friends: LineFriend[];
   error: string | null;
   isInLineApp: boolean;
@@ -25,6 +39,9 @@ interface AuthContextType {
   login: () => Promise<void>;
   logout: () => void;
   clearError: () => void;
+  
+  // User Profile Actions
+  loadUserProfile: () => Promise<void>; // Added function to load user profile
   
   // Wallet Actions
   connectWallet: () => Promise<string | null>;
@@ -60,6 +77,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     error: null,
     isInLineApp: false,
   });
+
+  const [userProfile, setUserProfile] = useState<BackendUser | null>(null);
 
   const [walletState, setWalletState] = useState<WalletState>({
     isConnected: false,
@@ -132,6 +151,48 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  // Load user profile from backend using lineUserId
+  const loadUserProfile = useCallback(async () => {
+    if (!authState.user?.userId) {
+      console.log('⚠️ No user ID available to load profile');
+      return;
+    }
+
+    try {
+      console.log('📊 Loading user profile from backend for lineUserId:', authState.user.userId);
+      
+      const response = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.AUTH.GET_MY_PROFILE}/${authState.user.userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const profile: BackendUser = await response.json();
+        console.log('✅ User profile loaded successfully:', profile);
+        setUserProfile(profile);
+      } else {
+        console.error('❌ Failed to load user profile:', response.status);
+        setUserProfile(null);
+      }
+    } catch (error) {
+      console.error('❌ Error loading user profile:', error);
+      setUserProfile(null);
+    }
+  }, [authState.user?.userId]);
+
+  // Load user profile when user becomes authenticated
+  useEffect(() => {
+    if (authState.isAuthenticated && authState.user?.userId) {
+      console.log('🔐 User authenticated, loading user profile...');
+      loadUserProfile();
+    } else {
+      // Clear profile when user logs out
+      setUserProfile(null);
+    }
+  }, [authState.isAuthenticated, authState.user?.userId, loadUserProfile]);
+
   useEffect(() => {
     // Subscribe to auth state changes
     const unsubscribeAuth = lineAuth.subscribe((newState) => {
@@ -180,6 +241,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isAuthenticated: authState.isAuthenticated,
     isLoading: authState.isLoading,
     user: authState.user,
+    userProfile: userProfile,
     friends: authState.friends,
     error: authState.error,
     isInLineApp: authState.isInLineApp,
@@ -216,6 +278,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // This would need to be implemented in LineAuth if needed
       console.log('Clear error called');
     },
+
+    // User Profile Actions
+    loadUserProfile,
 
     // Wallet Actions
     connectWallet: async () => {

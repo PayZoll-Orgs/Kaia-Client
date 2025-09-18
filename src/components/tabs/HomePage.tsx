@@ -26,8 +26,11 @@ interface HomePageProps {
 }
 
 export default function HomePage({ onTabChange }: HomePageProps = {}) {
-  const { user, friends, logout } = useAuth();
+  const { user, userProfile, friends, logout } = useAuth();
   const [showQRScanner, setShowQRScanner] = useState(false);
+
+  // Debug: Log when userProfile changes
+  console.log('🏠 HomePage - User Profile:', userProfile);
   const [showQRPay, setShowQRPay] = useState(false);
   const [showPayAnyone, setShowPayAnyone] = useState(false);
   const [showPayAnyoneModal, setShowPayAnyoneModal] = useState(false);
@@ -192,7 +195,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
             className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden hover:ring-2 hover:ring-green-500 transition-all"
           >
             <img
-              src={user?.pictureUrl || "https://randomuser.me/api/portraits/men/0.jpg"}
+              src={userProfile?.pictureUrl || user?.pictureUrl || "https://randomuser.me/api/portraits/men/0.jpg"}
               alt="Profile"
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -214,8 +217,13 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
 
         {/* Greeting */}
         <div className="px-6 mb-4">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-1">Hello {user?.displayName || 'User'}!</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-1">Hello {userProfile?.displayName || user?.displayName || 'User'}!</h1>
           <p className="text-gray-500">Let&apos;s save your money.</p>
+          {userProfile && (
+            <p className="text-xs text-gray-400 mt-1">
+              Wallet: {userProfile.walletAddress.slice(0, 6)}...{userProfile.walletAddress.slice(-4)}
+            </p>
+          )}
         </div>
       </header>
 

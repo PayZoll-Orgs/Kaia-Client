@@ -167,6 +167,8 @@ export default function PayAnyoneModal({ isOpen, onClose, onSuccess }: PayAnyone
 
   // Execute payment
   const handleExecutePayment = async () => {
+
+    
     if (!selectedUser || !amount || !wallet.address || !user?.userId) {
       setError('Missing payment information');
       return;
@@ -195,13 +197,38 @@ export default function PayAnyoneModal({ isOpen, onClose, onSuccess }: PayAnyone
 
       // Record transaction in backend
       console.log('📝 Recording P2P transaction...');
+      
+      // First, get the current user's profile from backend to get the correct userId
+      let senderUserId; // fallback
+      
+      try {
+        console.log('🔍 Fetching current user profile for senderId...');
+        const profileResponse = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.AUTH.GET_MY_PROFILE}/${user?.userId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (profileResponse.ok) {
+          const userProfile = await profileResponse.json();
+          senderUserId = userProfile.userId; // Use the userId from backend
+          console.log('✅ Using backend userId as senderId:', senderUserId);
+        } else {
+          console.warn('⚠️ Failed to fetch user profile, using fallback userId');
+        }
+      } catch (profileError) {
+        console.error('❌ Error fetching user profile:', profileError);
+        console.log('⚠️ Using fallback userId as senderId');
+      }
+      
       const recordResponse = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.P2P.RECORD}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          senderId: user.userId,
+          senderId: senderUserId,
           receiverId: selectedUser.userId,
           amount: parseFloat(amount),
           transactionHash: transferResult.transactionHash,
