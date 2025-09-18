@@ -18,19 +18,17 @@ import InsufficientBalanceModal from '@/components/InsufficientBalanceModal';
 
 interface User {
   _id: string;
-  username: string;
+  userId: string; // This is the username in the backend schema
   displayName: string;
   walletAddress: string;
   pictureUrl?: string;
   statusMessage?: string;
-  userId: string;
   lineUserId: string;
 }
 
 interface BulkRecipient {
   id: string;
-  userId: string;
-  username: string;
+  userId: string; // This is the username (userId from backend)
   address: string;
   name: string;
   amount: string;
@@ -197,8 +195,7 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
 
     const newRecipients: BulkRecipient[] = selectedUsers.map(user => ({
       id: user._id,
-      userId: user.userId,
-      username: user.username,
+      userId: user.userId, // userId is the username in backend schema
       address: user.walletAddress,
       name: user.displayName,
       amount: '0'
@@ -390,7 +387,7 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
           const allUsers = await usersResponse.json();
           const currentUser = allUsers.find((u: User) => u.lineUserId === user?.userId);
           if (currentUser) {
-            senderUsername = currentUser.username;
+            senderUsername = currentUser.userId; // Use userId field (which is the username in backend)
             console.log('✅ Found sender username:', senderUsername);
           } else {
             console.warn('⚠️ Current user not found in backend, using fallback');
@@ -414,7 +411,7 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
       // Prepare the request body
       const requestBody = {
         senderId: senderUsername, // Use the found username
-        receiverIds: recipients.map(r => r.username), // Array of usernames
+        receiverIds: recipients.map(r => r.userId), // Array of usernames (userId field from backend)
         amounts: recipients.map(r => parseFloat(r.amount)), // Array of amounts
         transactionHash: bulkTx,
         status: 'completed'
@@ -424,7 +421,7 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
       console.log('📤 BULK PAYMENT REQUEST BODY:', JSON.stringify(requestBody, null, 2));
       console.log('📤 Request details:', {
         senderUsername,
-        recipientUsernames: recipients.map(r => r.username),
+        recipientUsernames: recipients.map(r => r.userId),
         amounts: recipients.map(r => parseFloat(r.amount)),
         bulkTx,
         recipientsData: recipients
