@@ -336,7 +336,7 @@ export default function SplitBillModal({ isOpen, onClose, onSuccess }: SplitBill
 
       // Prepare backend API data
       const splitPaymentData = {
-        payeeId: userProfile?.userId || user.userId, // Current user is the payee (person who paid)
+        payeeId: userProfile?.userId, // Current user's backend userId (person who paid)
         contributorIds: participants.map(p => p.userId), // All participants who owe money
         amounts: participants.map(p => parseFloat(p.amount)), // Individual amounts owed
         transactionHash: txHash, // Transaction hash from blockchain
