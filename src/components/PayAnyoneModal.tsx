@@ -20,6 +20,7 @@ interface User {
   displayName: string;
   pictureUrl?: string;
   walletAddress: string;
+  lineUserId: string;
 }
 
 interface PayAnyoneModalProps {
@@ -35,6 +36,7 @@ export default function PayAnyoneModal({ isOpen, onClose, onSuccess }: PayAnyone
   const [currentStep, setCurrentStep] = useState<'search' | 'amount' | 'confirm' | 'processing'>('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]); // Store all users for finding current user
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -78,8 +80,11 @@ export default function PayAnyoneModal({ isOpen, onClose, onSuccess }: PayAnyone
         const users = await response.json();
         console.log('📋 Retrieved users:', users.length);
         
-        // Filter out current user
-        let filteredUsers = users.filter((u: User) => u.userId !== user?.userId);
+        // Store all users for finding current user later
+        setAllUsers(users);
+        
+        // Filter out current user using lineUserId for search results
+        let filteredUsers = users.filter((u: User) => u.lineUserId !== user?.userId);
         
         // Client-side search filtering if query provided
         if (query && query.length >= 2) {
@@ -168,7 +173,7 @@ export default function PayAnyoneModal({ isOpen, onClose, onSuccess }: PayAnyone
   // Execute payment
   const handleExecutePayment = async () => {
 
-    
+
     if (!selectedUser || !amount || !wallet.address || !user?.userId) {
       setError('Missing payment information');
       return;
@@ -198,29 +203,11 @@ export default function PayAnyoneModal({ isOpen, onClose, onSuccess }: PayAnyone
       // Record transaction in backend
       console.log('📝 Recording P2P transaction...');
       
-      // First, get the current user's profile from backend to get the correct userId
-      let senderUserId; // fallback
+      // Get current user's userId from allUsers (already fetched from getAllUsers)
+      const currentUser = allUsers.find(u => u.lineUserId === user?.userId);
+      const senderUserId = currentUser?.userId || user?.userId; // fallback to LINE userId if not found
       
-      try {
-        console.log('🔍 Fetching current user profile for senderId...');
-        const profileResponse = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.AUTH.GET_MY_PROFILE}/${user?.userId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (profileResponse.ok) {
-          const userProfile = await profileResponse.json();
-          senderUserId = userProfile.userId; // Use the userId from backend
-          console.log('✅ Using backend userId as senderId:', senderUserId);
-        } else {
-          console.warn('⚠️ Failed to fetch user profile, using fallback userId');
-        }
-      } catch (profileError) {
-        console.error('❌ Error fetching user profile:', profileError);
-        console.log('⚠️ Using fallback userId as senderId');
-      }
+      console.log('✅ Using backend userId as senderId:', senderUserId);
       
       const recordResponse = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.P2P.RECORD}`, {
         method: 'POST',
