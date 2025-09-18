@@ -411,18 +411,31 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
         createdAt: new Date()
       };
 
+      // Prepare the request body
+      const requestBody = {
+        senderId: senderUsername, // Use the found username
+        receiverIds: recipients.map(r => r.username), // Array of usernames
+        amounts: recipients.map(r => parseFloat(r.amount)), // Array of amounts
+        transactionHash: bulkTx,
+        status: 'completed'
+      };
+
+      // 🐛 DEBUG: Log the exact body being sent
+      console.log('📤 BULK PAYMENT REQUEST BODY:', JSON.stringify(requestBody, null, 2));
+      console.log('📤 Request details:', {
+        senderUsername,
+        recipientUsernames: recipients.map(r => r.username),
+        amounts: recipients.map(r => parseFloat(r.amount)),
+        bulkTx,
+        recipientsData: recipients
+      });
+
       const recordResponse = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.BULK.RECORD}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          senderId: senderUsername, // Use the found username
-          receiverIds: recipients.map(r => r.username), // Array of usernames
-          amounts: recipients.map(r => parseFloat(r.amount)), // Array of amounts
-          transactionHash: bulkTx,
-          status: 'completed'
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!recordResponse.ok) {
