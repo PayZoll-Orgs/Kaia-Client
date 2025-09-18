@@ -53,7 +53,7 @@ interface SplitBillModalProps {
 }
 
 export default function SplitBillModal({ isOpen, onClose, onSuccess }: SplitBillModalProps) {
-  const { user, wallet } = useAuth();
+  const { user, wallet, userProfile } = useAuth();
   
   // UI State
   const [currentStep, setCurrentStep] = useState<'create' | 'participants' | 'review' | 'processing'>('create');
@@ -334,33 +334,37 @@ export default function SplitBillModal({ isOpen, onClose, onSuccess }: SplitBill
         deadline: deadline ? new Date(deadline) : undefined
       };
 
+      // Prepare backend API data
+      const splitPaymentData = {
+        payeeId: userProfile?.userId || user.userId, // Current user is the payee (person who paid)
+        contributorIds: participants.map(p => p.userId), // All participants who owe money
+        amounts: participants.map(p => parseFloat(p.amount)), // Individual amounts owed
+        transactionHash: txHash, // Transaction hash from blockchain
+        status: participants.map(p => ({
+          contributorId: p.userId,
+          paid: false // Initially all payments are unpaid
+        }))
+      };
+
+      console.log('📤 Recording split payment in backend:', splitPaymentData);
+
       // Record in backend via split payment API
       const recordResponse = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.SPLIT.RECORD}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          billId: splitId,
-          creatorId: user.userId,
-          participants: participants.map(p => ({
-            userId: p.address, // Using address as userId for demo
-            amount: parseFloat(p.amount),
-            paid: false
-          })),
-          totalAmount: parseFloat(totalAmount),
-          description: description,
-          currency: 'USDT',
-          status: 'active'
-        }),
+        body: JSON.stringify(splitPaymentData),
       });
 
       if (!recordResponse.ok) {
-        console.warn('Failed to record split bill in backend:', recordResponse.status);
+        const errorText = await recordResponse.text();
+        console.warn('Failed to record split bill in backend:', recordResponse.status, errorText);
         // Continue anyway since the main operation succeeded
+      } else {
+        const responseData = await recordResponse.json();
+        console.log('📊 Split bill recorded in backend successfully:', responseData);
       }
-
-      console.log('📊 Split bill recorded in backend');
       onSuccess(splitBillData);
       onClose();
 
