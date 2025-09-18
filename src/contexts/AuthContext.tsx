@@ -159,9 +159,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     try {
-      console.log('📊 Loading user profile from backend for lineUserId:', authState.user.userId);
+      console.log('📊 Loading user profile from backend for lineUserId:', authState.user?.userId);
       
-      const response = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.AUTH.GET_MY_PROFILE}/${authState.user.userId}`, {
+      // Use getAllUsers and filter for the current user
+      const response = await fetch(`${CONFIG.BACKEND_URL}/api/auth/getAllUsers`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -169,11 +170,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
 
       if (response.ok) {
-        const profile: BackendUser = await response.json();
-        console.log('✅ User profile loaded successfully:', profile);
-        setUserProfile(profile);
+        const allUsers: BackendUser[] = await response.json();
+        console.log('📋 All users fetched, finding current user...');
+        
+        // Find the current user by lineUserId
+        const profile = allUsers.find(user => user.lineUserId === authState.user?.userId);
+        
+        if (profile) {
+          console.log('✅ User profile found:', profile);
+          setUserProfile(profile);
+        } else {
+          console.warn('⚠️ User profile not found in database for lineUserId:', authState.user?.userId);
+          setUserProfile(null);
+        }
       } else {
-        console.error('❌ Failed to load user profile:', response.status);
+        console.error('❌ Failed to fetch users:', response.status);
         setUserProfile(null);
       }
     } catch (error) {
