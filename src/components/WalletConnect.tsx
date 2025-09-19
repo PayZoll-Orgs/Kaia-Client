@@ -1,15 +1,18 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { WalletType, TESTNET_USDT_CONTRACT } from '@/lib/wallet-service';
+import { getUSDTBalance, requestUSDTFromFaucet, TokenBalance, FaucetResult } from '@/lib/token-service';
+import { getGaslessTransactionService } from '@/lib/gasless-transactions';
 import { 
   WalletIcon, 
   BanknotesIcon, 
   ArrowPathIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
-  XMarkIcon 
+  XMarkIcon,
+  CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 
 interface WalletConnectProps {
@@ -31,8 +34,32 @@ export default function WalletConnect({
     getTokenBalance 
   } = useAuth();
 
-  const [usdtBalance, setUsdtBalance] = useState<string | null>(null);
+  const [usdtBalance, setUsdtBalance] = useState<TokenBalance | null>(null);
   const [isLoadingUsdt, setIsLoadingUsdt] = useState(false);
+  const [faucetLoading, setFaucetLoading] = useState(false);
+  const [faucetError, setFaucetError] = useState<string | null>(null);
+  const [faucetSuccess, setFaucetSuccess] = useState<string | null>(null);
+
+  // Load USDT balance function
+  const loadUsdtBalance = useCallback(async () => {
+    if (!wallet.address) {
+      setUsdtBalance(null);
+      return;
+    }
+    
+    setIsLoadingUsdt(true);
+    try {
+      console.log('🔍 Loading USDT balance for:', wallet.address);
+      const balance = await getUSDTBalance(wallet.address);
+      setUsdtBalance(balance);
+      console.log('✅ USDT balance loaded:', balance);
+    } catch (error) {
+      console.error('❌ Failed to load USDT balance:', error);
+      setUsdtBalance(null);
+    } finally {
+      setIsLoadingUsdt(false);
+    }
+  }, [wallet.address]);
 
   const handleConnect = async () => {
     try {
@@ -43,9 +70,11 @@ export default function WalletConnect({
       
       if (address) {
         console.log('✅ Wallet connected:', address);
-        // Optionally load USDT balance
+        // Auto-load USDT balance after connection
         if (showBalance) {
-          loadUsdtBalance();
+          setTimeout(() => {
+            loadUsdtBalance();
+          }, 1000); // Small delay to ensure wallet state is updated
         }
       }
     } catch (error) {
@@ -53,10 +82,45 @@ export default function WalletConnect({
     }
   };
 
+  // Handle faucet request
+  const handleFaucetRequest = async () => {
+    if (!wallet.address) {
+      setFaucetError('Wallet not connected');
+      return;
+    }
+
+    setFaucetLoading(true);
+    setFaucetError(null);
+    setFaucetSuccess(null);
+
+    try {
+      console.log('🚰 Requesting USDT from faucet...');
+      const result: FaucetResult = await requestUSDTFromFaucet(wallet.address);
+      
+      if (result.success) {
+        const gaslessIndicator = result.gasless ? ' ⚡ (Gasless)' : ' 💰 (Paid Gas)';
+        setFaucetSuccess(`Success! Transaction: ${result.transactionHash}${gaslessIndicator}`);
+        // Reload balance after successful faucet
+        setTimeout(() => {
+          loadUsdtBalance();
+        }, 5000); // Wait 5 seconds for transaction to be indexed
+      } else {
+        setFaucetError(result.error || 'Faucet request failed');
+      }
+    } catch (error) {
+      console.error('❌ Faucet request error:', error);
+      setFaucetError(error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      setFaucetLoading(false);
+    }
+  };
+
   const handleDisconnect = async () => {
     try {
       await disconnectWallet();
       setUsdtBalance(null);
+      setFaucetError(null);
+      setFaucetSuccess(null);
     } catch (error) {
       console.error('Failed to disconnect wallet:', error);
     }
@@ -73,20 +137,23 @@ export default function WalletConnect({
     }
   };
 
-  const loadUsdtBalance = async () => {
-    if (!wallet.isConnected) return;
-    
-    setIsLoadingUsdt(true);
-    try {
-      const balance = await getTokenBalance(TESTNET_USDT_CONTRACT);
-      setUsdtBalance(balance);
-    } catch (error) {
-      console.error('Failed to load USDT balance:', error);
-      setUsdtBalance('0.00');
-    } finally {
-      setIsLoadingUsdt(false);
+  // Auto-load USDT balance when wallet connects
+  useEffect(() => {
+    if (wallet.isConnected && wallet.address && showBalance) {
+      loadUsdtBalance();
     }
-  };
+  }, [wallet.isConnected, wallet.address, showBalance, loadUsdtBalance]);
+
+  // Clear faucet messages after delay
+  useEffect(() => {
+    if (faucetSuccess || faucetError) {
+      const timer = setTimeout(() => {
+        setFaucetSuccess(null);
+        setFaucetError(null);
+      }, 10000); // Clear after 10 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [faucetSuccess, faucetError]);
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -237,34 +304,56 @@ export default function WalletConnect({
               </div>
 
               {/* USDT Balance */}
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <BanknotesIcon className="w-4 h-4 text-green-600" />
+              <div className="bg-green-50 rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <BanknotesIcon className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900">USDT</span>
+                        <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+                          Testnet
+                        </span>
+                        {isLoadingUsdt && (
+                          <ArrowPathIcon className="w-4 h-4 animate-spin text-green-500" />
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {isLoadingUsdt 
+                          ? 'Loading...' 
+                          : usdtBalance 
+                            ? `${usdtBalance.balance} USDT`
+                            : '0.00 USDT'
+                        }
+                      </div>
+                    </div>
                   </div>
-                  <span className="font-medium text-gray-900">USDT</span>
+                  <button
+                    onClick={handleFaucetRequest}
+                    disabled={faucetLoading || !wallet.address}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <CurrencyDollarIcon className="w-4 h-4" />
+                    {faucetLoading ? 'Getting...' : 'Get USDT'}
+                  </button>
                 </div>
-                <div className="text-right">
-                  <div className="font-semibold text-gray-900">
-                    {isLoadingUsdt ? (
-                      <ArrowPathIcon className="w-4 h-4 animate-spin inline" />
-                    ) : (
-                      `${usdtBalance || '0.00'} USDT`
-                    )}
+                
+                {/* Faucet Status Messages */}
+                {faucetSuccess && (
+                  <div className="mt-3 p-3 bg-green-100 border border-green-200 rounded-lg">
+                    <p className="text-green-800 text-sm font-medium">✅ Faucet Success!</p>
+                    <p className="text-green-700 text-xs mt-1 break-all">{faucetSuccess}</p>
                   </div>
-                  <div className="text-xs text-gray-500">Testnet</div>
-                </div>
+                )}
+                {faucetError && (
+                  <div className="mt-3 p-3 bg-red-100 border border-red-200 rounded-lg">
+                    <p className="text-red-800 text-sm font-medium">❌ Faucet Error</p>
+                    <p className="text-red-700 text-xs mt-1">{faucetError}</p>
+                  </div>
+                )}
               </div>
-
-              {usdtBalance === null && wallet.isConnected && (
-                <button
-                  onClick={loadUsdtBalance}
-                  disabled={isLoadingUsdt}
-                  className="w-full text-blue-600 hover:text-blue-700 text-sm font-medium py-2 transition-colors"
-                >
-                  Load Token Balances
-                </button>
-              )}
             </div>
           )}
 
@@ -283,9 +372,7 @@ export default function WalletConnect({
       <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
         <div className="flex items-center gap-2 text-yellow-700">
           <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0" />
-          <span className="text-xs">
-            This is Kaia testnet. Tokens have no real value.
-          </span>
+          
         </div>
       </div>
     </div>
