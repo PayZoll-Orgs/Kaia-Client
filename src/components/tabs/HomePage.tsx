@@ -60,7 +60,9 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
   const { user, userProfile, friends, logout } = useAuth();
   const [showQRScanner, setShowQRScanner] = useState(false);
 
-  // Transaction state
+  // User and transaction state
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
   const [transactions, setTransactions] = useState<TransactionDetail[]>([]);
   const [recentPeople, setRecentPeople] = useState<RecentPerson[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,13 +94,44 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
     phoneNumber: '', // Not available from LINE friend data
   });
 
+  // Fetch all users and get current user profile
+  const fetchAllUsersAndCurrentProfile = useCallback(async () => {
+    if (!user?.userId) return;
+
+    try {
+      console.log('🔍 Fetching all users and current user profile...');
+      
+      // Fetch all users
+      const allUsersResponse = await fetch(`${CONFIG.BACKEND_URL}/api/auth/getAllUsers`);
+      if (!allUsersResponse.ok) {
+        throw new Error('Failed to fetch all users');
+      }
+      const allUsersData = await allUsersResponse.json();
+      console.log('✅ All users fetched:', allUsersData);
+      setAllUsers(allUsersData);
+
+      // Find current user profile
+      const currentUser = allUsersData.find((u: any) => u.lineUserId === user.userId);
+      console.log('✅ Current user profile found:', currentUser);
+      setCurrentUserProfile(currentUser);
+
+      return currentUser;
+    } catch (error) {
+      console.error('❌ Error fetching users:', error);
+      return null;
+    }
+  }, [user?.userId]);
+
   // Fetch transaction history and process recent people
   const fetchTransactionHistory = useCallback(async () => {
-    if (!userProfile?.userId) return;
+    const currentUser = currentUserProfile || await fetchAllUsersAndCurrentProfile();
+    if (!currentUser?.userId) return;
 
     try {
       setLoading(true);
-      const response = await fetch(`${CONFIG.BACKEND_URL}/api/history/getUserTxnHistory/${userProfile.userId}`);
+      console.log('🔍 Fetching transaction history for user:', currentUser.userId);
+      
+      const response = await fetch(`${CONFIG.BACKEND_URL}/api/history/getUserTxnHistory/${currentUser.userId}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch transaction history');
@@ -106,6 +139,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
       
       const data = await response.json();
       const userTransactions = data.transactions;
+      console.log('✅ Transactions fetched:', userTransactions);
       
       // Filter out current user's transactions and get recent people
       const peopleMap = new Map<string, RecentPerson>();
@@ -115,29 +149,29 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
         
         // Determine the other user in the transaction
         if (txn.transactionType === 'P2P') {
-          if (txn.senderId === userProfile.userId) {
+          if (txn.senderId === currentUser.userId) {
             otherUserId = txn.receiverId || null;
-          } else if (txn.receiverId === userProfile.userId) {
+          } else if (txn.receiverId === currentUser.userId) {
             otherUserId = txn.senderId || null;
           }
         } else if (txn.transactionType === 'Bulk Transfer') {
-          if (txn.senderId === userProfile.userId) {
+          if (txn.senderId === currentUser.userId) {
             // Current user is sender, get receivers
             txn.receiverIds?.forEach(receiverId => {
-              if (receiverId !== userProfile.userId) {
+              if (receiverId !== currentUser.userId) {
                 otherUserId = receiverId;
               }
             });
           }
         } else if (txn.transactionType === 'Split Payment') {
-          if (txn.payeeId === userProfile.userId) {
+          if (txn.payeeId === currentUser.userId) {
             // Current user is payee, get contributors
             txn.contributorIds?.forEach(contributorId => {
-              if (contributorId !== userProfile.userId) {
+              if (contributorId !== currentUser.userId) {
                 otherUserId = contributorId;
               }
             });
-          } else if (txn.contributorIds?.includes(userProfile.userId)) {
+          } else if (txn.contributorIds?.includes(currentUser.userId)) {
             // Current user is contributor, get payee
             otherUserId = txn.payeeId || null;
           }
@@ -146,15 +180,14 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
         if (otherUserId) {
           const existing = peopleMap.get(otherUserId);
           if (!existing || new Date(txn.createdAt) > new Date(existing.lastTransactionDate)) {
-            // Find user display name from transaction context or use fallback
+            // Find user details from allUsers array
             let displayName = `User ${otherUserId.slice(-4)}`;
             let pictureUrl = '';
             
-            // Try to get display name from friends if available
-            const friend = friends.find(f => f.userId === otherUserId);
-            if (friend) {
-              displayName = friend.displayName;
-              pictureUrl = friend.pictureUrl || '';
+            const otherUser = allUsers.find((u: any) => u.userId === otherUserId);
+            if (otherUser) {
+              displayName = otherUser.displayName || otherUser.username || displayName;
+              pictureUrl = otherUser.pictureUrl || '';
             }
             
             peopleMap.set(otherUserId, {
@@ -173,27 +206,28 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
         .sort((a, b) => new Date(b.lastTransactionDate).getTime() - new Date(a.lastTransactionDate).getTime())
         .slice(0, 10); // Show top 10 recent people
       
+      console.log('✅ Recent people processed:', sortedPeople);
       setTransactions(userTransactions);
       setRecentPeople(sortedPeople);
     } catch (error) {
-      console.error('Error fetching transaction history:', error);
+      console.error('❌ Error fetching transaction history:', error);
     } finally {
       setLoading(false);
     }
-  }, [userProfile?.userId, friends]);
+  }, [currentUserProfile, allUsers, fetchAllUsersAndCurrentProfile]);
 
   // Fetch transactions for specific person
   const fetchPersonTransactions = useCallback((person: RecentPerson) => {
     const personTransactions = transactions.filter(txn => {
       if (txn.transactionType === 'P2P') {
-        return (txn.senderId === person.userId && txn.receiverId === userProfile?.userId) ||
-               (txn.receiverId === person.userId && txn.senderId === userProfile?.userId);
+        return (txn.senderId === person.userId && txn.receiverId === currentUserProfile?.userId) ||
+               (txn.receiverId === person.userId && txn.senderId === currentUserProfile?.userId);
       } else if (txn.transactionType === 'Bulk Transfer') {
         return (txn.senderId === person.userId) || 
-               (txn.senderId === userProfile?.userId && txn.receiverIds?.includes(person.userId));
+               (txn.senderId === currentUserProfile?.userId && txn.receiverIds?.includes(person.userId));
       } else if (txn.transactionType === 'Split Payment') {
-        return (txn.payeeId === person.userId && txn.contributorIds?.includes(userProfile?.userId || '')) ||
-               (txn.payeeId === userProfile?.userId && txn.contributorIds?.includes(person.userId));
+        return (txn.payeeId === person.userId && txn.contributorIds?.includes(currentUserProfile?.userId || '')) ||
+               (txn.payeeId === currentUserProfile?.userId && txn.contributorIds?.includes(person.userId));
       }
       return false;
     }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -201,12 +235,14 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
     setSelectedPersonTransactions(personTransactions);
     setSelectedPerson(person);
     setShowPersonTransactions(true);
-  }, [transactions, userProfile?.userId]);
+  }, [transactions, currentUserProfile?.userId]);
 
-  // Load data when component mounts or userProfile changes
+  // Load data when component mounts or user changes
   useEffect(() => {
-    fetchTransactionHistory();
-  }, [fetchTransactionHistory]);
+    fetchAllUsersAndCurrentProfile().then(() => {
+      fetchTransactionHistory();
+    });
+  }, [fetchAllUsersAndCurrentProfile, fetchTransactionHistory]);
 
   const handleQRScan = (result: string) => {
     console.log("QR Code scanned:", result);
@@ -350,7 +386,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
             className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden hover:ring-2 hover:ring-green-500 transition-all"
           >
             <img
-              src={userProfile?.pictureUrl || user?.pictureUrl || "https://randomuser.me/api/portraits/men/0.jpg"}
+              src={currentUserProfile?.pictureUrl || userProfile?.pictureUrl || user?.pictureUrl || "https://randomuser.me/api/portraits/men/0.jpg"}
               alt="Profile"
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -372,11 +408,11 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
 
         {/* Greeting */}
         <div className="px-6 mb-4">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-1">Hello {userProfile?.displayName || user?.displayName || 'User'}!</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-1">Hello {currentUserProfile?.displayName || userProfile?.displayName || user?.displayName || 'User'}!</h1>
           <p className="text-gray-500">Let&apos;s save your money.</p>
-          {userProfile && (
+          {(currentUserProfile || userProfile) && (
             <p className="text-xs text-gray-400 mt-1">
-              Wallet: {userProfile.walletAddress.slice(0, 6)}...{userProfile.walletAddress.slice(-4)}
+              Wallet: {(currentUserProfile?.walletAddress || userProfile?.walletAddress)?.slice(0, 6)}...{(currentUserProfile?.walletAddress || userProfile?.walletAddress)?.slice(-4)}
             </p>
           )}
         </div>
