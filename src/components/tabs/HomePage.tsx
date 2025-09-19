@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { QrCodeIcon, UserIcon, ShareIcon, DocumentDuplicateIcon } from "@heroicons/react/24/outline";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, BackendUser } from "@/contexts/AuthContext";
 import { LineFriend } from "@/lib/line-auth";
 import LIFFQRScanner from "@/components/LIFFQRScanner";
 import PayAnyoneModal from "@/components/PayAnyoneModal";
@@ -13,6 +13,29 @@ import PastInteractionPopup from "@/components/PastInteractionPopup";
 import SplitBillPopup from "@/components/SplitBillPopup";
 import FriendsPopup from "@/components/FriendsPopup";
 import { CONFIG } from "@/lib/config";
+
+interface TransactionDetail {
+  _id: string;
+  transactionType: 'P2P' | 'Bulk Transfer' | 'Split Payment';
+  userRole: 'sender' | 'receiver' | 'payee' | 'contributor';
+  amount?: number;
+  totalAmount?: number;
+  userAmount?: number;
+  description?: string;
+  title?: string;
+  transactionHash: string;
+  createdAt: string;
+  userPaymentStatus?: boolean;
+  deadline?: string;
+  // Original transaction data
+  senderId?: string;
+  receiverId?: string;
+  receiverIds?: string[];
+  amounts?: number[];
+  payeeId?: string;
+  contributorIds?: string[];
+  status?: Array<{ contributorId: string; paid: boolean }> | string;
+}
 
 interface Contact {
   id: string;
@@ -61,8 +84,8 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
   const [showQRScanner, setShowQRScanner] = useState(false);
 
   // User and transaction state
-  const [allUsers, setAllUsers] = useState<any[]>([]);
-  const [currentUserProfile, setCurrentUserProfile] = useState<any>(null);
+  const [allUsers, setAllUsers] = useState<BackendUser[]>([]);
+  const [currentUserProfile, setCurrentUserProfile] = useState<BackendUser | null>(null);
   const [transactions, setTransactions] = useState<TransactionDetail[]>([]);
   const [recentPeople, setRecentPeople] = useState<RecentPerson[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,7 +134,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
       setAllUsers(allUsersData);
 
       // Find current user profile
-      const currentUser = allUsersData.find((u: any) => u.lineUserId === user.userId);
+      const currentUser = allUsersData.find((u: BackendUser) => u.lineUserId === user.userId);
       console.log('✅ Current user profile found:', currentUser);
       setCurrentUserProfile(currentUser);
 
@@ -184,9 +207,9 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
             let displayName = `User ${otherUserId.slice(-4)}`;
             let pictureUrl = '';
             
-            const otherUser = allUsers.find((u: any) => u.userId === otherUserId);
+            const otherUser = allUsers.find((u: BackendUser) => u.userId === otherUserId);
             if (otherUser) {
-              displayName = otherUser.displayName || otherUser.username || displayName;
+              displayName = otherUser.displayName || displayName;
               pictureUrl = otherUser.pictureUrl || '';
             }
             

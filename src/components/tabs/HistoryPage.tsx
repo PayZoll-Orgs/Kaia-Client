@@ -1,6 +1,6 @@
 "use client";
 import { ArrowDownIcon, ArrowUpIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { CONFIG } from "@/lib/config";
 
@@ -59,7 +59,7 @@ export default function HistoryPage() {
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionDetail | null>(null);
 
   // Fetch transaction history
-  const fetchTransactionHistory = async () => {
+  const fetchTransactionHistory = useCallback(async () => {
     if (!userProfile?.userId) return;
 
     try {
@@ -80,11 +80,11 @@ export default function HistoryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userProfile?.userId]);
 
   useEffect(() => {
     fetchTransactionHistory();
-  }, [userProfile?.userId]);
+  }, [fetchTransactionHistory]);
 
   useEffect(() => {
     // Trigger animation after component mount
