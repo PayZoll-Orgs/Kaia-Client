@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { QrCodeIcon, UserIcon, ShareIcon, DocumentDuplicateIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/contexts/AuthContext";
 import { LineFriend } from "@/lib/line-auth";
@@ -12,6 +12,7 @@ import PayAnyonePopup from "@/components/PayAnyonePopup";
 import PastInteractionPopup from "@/components/PastInteractionPopup";
 import SplitBillPopup from "@/components/SplitBillPopup";
 import FriendsPopup from "@/components/FriendsPopup";
+import { CONFIG } from "@/lib/config";
 
 interface Contact {
   id: string;
@@ -21,6 +22,36 @@ interface Contact {
   phoneNumber: string;
 }
 
+interface TransactionDetail {
+  _id: string;
+  transactionType: 'P2P' | 'Bulk Transfer' | 'Split Payment';
+  userRole: 'sender' | 'receiver' | 'payee' | 'contributor';
+  amount?: number;
+  totalAmount?: number;
+  userAmount?: number;
+  description?: string;
+  title?: string;
+  transactionHash: string;
+  createdAt: string;
+  userPaymentStatus?: boolean;
+  deadline?: string;
+  senderId?: string;
+  receiverId?: string;
+  receiverIds?: string[];
+  amounts?: number[];
+  payeeId?: string;
+  contributorIds?: string[];
+  status?: Array<{ contributorId: string; paid: boolean }> | string;
+}
+
+interface RecentPerson {
+  userId: string;
+  displayName: string;
+  pictureUrl?: string;
+  lastTransactionDate: string;
+  transactionCount: number;
+}
+
 interface HomePageProps {
   onTabChange?: (tab: 'home' | 'history' | 'portfolio') => void;
 }
@@ -28,6 +59,14 @@ interface HomePageProps {
 export default function HomePage({ onTabChange }: HomePageProps = {}) {
   const { user, userProfile, friends, logout } = useAuth();
   const [showQRScanner, setShowQRScanner] = useState(false);
+
+  // Transaction state
+  const [transactions, setTransactions] = useState<TransactionDetail[]>([]);
+  const [recentPeople, setRecentPeople] = useState<RecentPerson[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPersonTransactions, setSelectedPersonTransactions] = useState<TransactionDetail[]>([]);
+  const [selectedPerson, setSelectedPerson] = useState<RecentPerson | null>(null);
+  const [showPersonTransactions, setShowPersonTransactions] = useState(false);
 
   // Debug: Log when userProfile changes
   console.log('🏠 HomePage - User Profile:', userProfile);
@@ -52,6 +91,122 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
     profilePhoto: friend.pictureUrl || '',
     phoneNumber: '', // Not available from LINE friend data
   });
+
+  // Fetch transaction history and process recent people
+  const fetchTransactionHistory = useCallback(async () => {
+    if (!userProfile?.userId) return;
+
+    try {
+      setLoading(true);
+      const response = await fetch(`${CONFIG.BACKEND_URL}/api/history/getUserTxnHistory/${userProfile.userId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch transaction history');
+      }
+      
+      const data = await response.json();
+      const userTransactions = data.transactions;
+      
+      // Filter out current user's transactions and get recent people
+      const peopleMap = new Map<string, RecentPerson>();
+      
+      userTransactions.forEach((txn: TransactionDetail) => {
+        let otherUserId: string | null = null;
+        
+        // Determine the other user in the transaction
+        if (txn.transactionType === 'P2P') {
+          if (txn.senderId === userProfile.userId) {
+            otherUserId = txn.receiverId || null;
+          } else if (txn.receiverId === userProfile.userId) {
+            otherUserId = txn.senderId || null;
+          }
+        } else if (txn.transactionType === 'Bulk Transfer') {
+          if (txn.senderId === userProfile.userId) {
+            // Current user is sender, get receivers
+            txn.receiverIds?.forEach(receiverId => {
+              if (receiverId !== userProfile.userId) {
+                otherUserId = receiverId;
+              }
+            });
+          }
+        } else if (txn.transactionType === 'Split Payment') {
+          if (txn.payeeId === userProfile.userId) {
+            // Current user is payee, get contributors
+            txn.contributorIds?.forEach(contributorId => {
+              if (contributorId !== userProfile.userId) {
+                otherUserId = contributorId;
+              }
+            });
+          } else if (txn.contributorIds?.includes(userProfile.userId)) {
+            // Current user is contributor, get payee
+            otherUserId = txn.payeeId || null;
+          }
+        }
+        
+        if (otherUserId) {
+          const existing = peopleMap.get(otherUserId);
+          if (!existing || new Date(txn.createdAt) > new Date(existing.lastTransactionDate)) {
+            // Find user display name from transaction context or use fallback
+            let displayName = `User ${otherUserId.slice(-4)}`;
+            let pictureUrl = '';
+            
+            // Try to get display name from friends if available
+            const friend = friends.find(f => f.userId === otherUserId);
+            if (friend) {
+              displayName = friend.displayName;
+              pictureUrl = friend.pictureUrl || '';
+            }
+            
+            peopleMap.set(otherUserId, {
+              userId: otherUserId,
+              displayName,
+              pictureUrl,
+              lastTransactionDate: txn.createdAt,
+              transactionCount: (existing?.transactionCount || 0) + 1
+            });
+          }
+        }
+      });
+      
+      // Sort by most recent transaction date
+      const sortedPeople = Array.from(peopleMap.values())
+        .sort((a, b) => new Date(b.lastTransactionDate).getTime() - new Date(a.lastTransactionDate).getTime())
+        .slice(0, 10); // Show top 10 recent people
+      
+      setTransactions(userTransactions);
+      setRecentPeople(sortedPeople);
+    } catch (error) {
+      console.error('Error fetching transaction history:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [userProfile?.userId, friends]);
+
+  // Fetch transactions for specific person
+  const fetchPersonTransactions = useCallback((person: RecentPerson) => {
+    const personTransactions = transactions.filter(txn => {
+      if (txn.transactionType === 'P2P') {
+        return (txn.senderId === person.userId && txn.receiverId === userProfile?.userId) ||
+               (txn.receiverId === person.userId && txn.senderId === userProfile?.userId);
+      } else if (txn.transactionType === 'Bulk Transfer') {
+        return (txn.senderId === person.userId) || 
+               (txn.senderId === userProfile?.userId && txn.receiverIds?.includes(person.userId));
+      } else if (txn.transactionType === 'Split Payment') {
+        return (txn.payeeId === person.userId && txn.contributorIds?.includes(userProfile?.userId || '')) ||
+               (txn.payeeId === userProfile?.userId && txn.contributorIds?.includes(person.userId));
+      }
+      return false;
+    }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    setSelectedPersonTransactions(personTransactions);
+    setSelectedPerson(person);
+    setShowPersonTransactions(true);
+  }, [transactions, userProfile?.userId]);
+
+  // Load data when component mounts or userProfile changes
+  useEffect(() => {
+    fetchTransactionHistory();
+  }, [fetchTransactionHistory]);
 
   const handleQRScan = (result: string) => {
     console.log("QR Code scanned:", result);
@@ -249,34 +404,49 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
           </button>
         </div>
         <div className="flex gap-4 overflow-x-auto pb-2 pt-2 px-2">
-          {[
-            { name: "Alice", id: 5, gender: "women", notifications: 2 },
-            { name: "Bob", id: 6, gender: "men", notifications: 0 },
-            { name: "Charlie", id: 7, gender: "men", notifications: 1 },
-            { name: "Diana", id: 8, gender: "women", notifications: 0 },
-            { name: "Eve", id: 9, gender: "women", notifications: 3 }
-          ].map((person, i) => (
-            <div key={i} className="flex flex-col items-center gap-2 min-w-[60px]">
-              <div className="relative w-12 h-12">
-                <div className="w-12 h-12 rounded-full overflow-hidden">
-                  <img 
-                    src={`https://randomuser.me/api/portraits/${person.gender}/${person.id}.jpg`}
-                    alt={person.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = `https://randomuser.me/api/portraits/lego/${person.id}.jpg`;
-                    }}
-                  />
-                </div>
-                {person.notifications > 0 && (
-                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-                    {person.notifications > 9 ? '9+' : person.notifications}
-                  </div>
-                )}
+          {loading ? (
+            // Loading skeleton
+            [...Array(5)].map((_, i) => (
+              <div key={i} className="flex flex-col items-center gap-2 min-w-[60px]">
+                <div className="w-12 h-12 rounded-full bg-gray-200 animate-pulse"></div>
+                <div className="w-8 h-3 bg-gray-200 rounded animate-pulse"></div>
               </div>
-              <span className="text-xs text-gray-600">{person.name}</span>
+            ))
+          ) : recentPeople.length > 0 ? (
+            recentPeople.map((person) => (
+              <button
+                key={person.userId}
+                onClick={() => fetchPersonTransactions(person)}
+                className="flex flex-col items-center gap-2 min-w-[60px] hover:opacity-75 transition-opacity"
+              >
+                <div className="relative w-12 h-12">
+                  <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-green-100">
+                    <img 
+                      src={person.pictureUrl || `https://randomuser.me/api/portraits/men/${Math.floor(Math.random() * 30)}.jpg`}
+                      alt={person.displayName}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = `https://randomuser.me/api/portraits/women/${Math.floor(Math.random() * 30)}.jpg`;
+                      }}
+                    />
+                  </div>
+                  {person.transactionCount > 1 && (
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                      {person.transactionCount > 9 ? '9+' : person.transactionCount}
+                    </div>
+                  )}
+                </div>
+                <span className="text-xs text-gray-600 truncate max-w-[60px]">
+                  {person.displayName.length > 8 ? person.displayName.slice(0, 8) + '...' : person.displayName}
+                </span>
+              </button>
+            ))
+          ) : (
+            <div className="w-full text-center py-8 text-gray-500">
+              <p className="text-sm">No recent transactions</p>
+              <p className="text-xs text-gray-400 mt-1">Start transacting to see recent people here</p>
             </div>
-          ))}
+          )}
         </div>
       </section>
 
@@ -329,47 +499,6 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
           >
             View All
           </button>
-        </div>
-      </section>
-
-      {/* Invoice Section */}
-      <section className="px-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Invoices</h2>
-          <button className="text-green-600 text-sm font-medium hover:text-green-700 transition-colors">
-            View All
-          </button>
-        </div>
-        <div className="space-y-3">
-          {[
-            { id: "INV-001", from: "Restaurant ABC", amount: "$45.50", status: "Pending", date: "2 hours ago" },
-            { id: "INV-002", from: "Uber Ride", amount: "$12.30", status: "Paid", date: "1 day ago" },
-            { id: "INV-003", from: "Coffee Shop", amount: "$8.75", status: "Overdue", date: "3 days ago" }
-          ].map((invoice, i) => (
-            <div key={i} className="bg-white rounded-2xl p-4 shadow-lg">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-bold text-sm">
-                    {invoice.from.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{invoice.from}</p>
-                    <p className="text-xs text-gray-500">{invoice.id} • {invoice.date}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-gray-900">{invoice.amount}</p>
-                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                    invoice.status === 'Paid' ? 'bg-green-100 text-green-800' :
-                    invoice.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {invoice.status}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       </section>
 
@@ -524,6 +653,119 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
             </div>
           </div>
         )}
+
+      {/* Person Transactions Modal */}
+      {showPersonTransactions && selectedPerson && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl max-h-[80vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full overflow-hidden">
+                  <img
+                    src={selectedPerson.pictureUrl || `https://randomuser.me/api/portraits/men/${Math.floor(Math.random() * 30)}.jpg`}
+                    alt={selectedPerson.displayName}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = `https://randomuser.me/api/portraits/women/${Math.floor(Math.random() * 30)}.jpg`;
+                    }}
+                  />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">{selectedPerson.displayName}</h2>
+                  <p className="text-sm text-gray-500">{selectedPersonTransactions.length} transactions</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPersonTransactions(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Transactions List */}
+            <div className="p-4 max-h-96 overflow-y-auto">
+              {selectedPersonTransactions.length > 0 ? (
+                <div className="space-y-3">
+                  {selectedPersonTransactions.map((txn) => {
+                    const isUserSender = txn.senderId === userProfile?.userId;
+                    const isUserReceiver = txn.receiverId === userProfile?.userId;
+                    const isUserPayee = txn.payeeId === userProfile?.userId;
+                    const isUserContributor = txn.contributorIds?.includes(userProfile?.userId || '');
+                    
+                    let roleDisplay = '';
+                    let amountDisplay = '';
+                    let colorClass = '';
+                    
+                    if (txn.transactionType === 'P2P') {
+                      if (isUserSender) {
+                        roleDisplay = 'Sent';
+                        amountDisplay = `-${txn.amount} USDT`;
+                        colorClass = 'text-red-600';
+                      } else if (isUserReceiver) {
+                        roleDisplay = 'Received';
+                        amountDisplay = `+${txn.amount} USDT`;
+                        colorClass = 'text-green-600';
+                      }
+                    } else if (txn.transactionType === 'Bulk Transfer') {
+                      if (isUserSender) {
+                        roleDisplay = 'Bulk Sent';
+                        amountDisplay = `-${txn.totalAmount} USDT`;
+                        colorClass = 'text-red-600';
+                      } else {
+                        roleDisplay = 'Bulk Received';
+                        amountDisplay = `+${txn.userAmount || txn.amount} USDT`;
+                        colorClass = 'text-green-600';
+                      }
+                    } else if (txn.transactionType === 'Split Payment') {
+                      if (isUserPayee) {
+                        roleDisplay = 'Split Received';
+                        amountDisplay = `+${txn.totalAmount} USDT`;
+                        colorClass = 'text-green-600';
+                      } else if (isUserContributor) {
+                        roleDisplay = 'Split Paid';
+                        amountDisplay = `-${txn.userAmount || txn.amount} USDT`;
+                        colorClass = 'text-red-600';
+                      }
+                    }
+                    
+                    return (
+                      <div key={txn._id} className="bg-gray-50 rounded-xl p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${isUserSender || isUserContributor ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                            <span className="text-sm font-medium text-gray-900">{roleDisplay}</span>
+                            <span className="text-xs text-gray-500">{txn.transactionType}</span>
+                          </div>
+                          <span className={`text-sm font-semibold ${colorClass}`}>
+                            {amountDisplay}
+                          </span>
+                        </div>
+                        {(txn.description || txn.title) && (
+                          <p className="text-xs text-gray-600 mb-2">{txn.description || txn.title}</p>
+                        )}
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>{new Date(txn.createdAt).toLocaleDateString()}</span>
+                          <span className="font-mono text-xs">
+                            {txn.transactionHash.slice(0, 8)}...{txn.transactionHash.slice(-6)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p className="text-sm">No transactions found</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
