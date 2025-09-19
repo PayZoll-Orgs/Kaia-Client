@@ -202,24 +202,37 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
         
         if (otherUserId) {
           const existing = peopleMap.get(otherUserId);
-          if (!existing || new Date(txn.createdAt) > new Date(existing.lastTransactionDate)) {
-            // Find user details from allUsers array
-            let displayName = `User ${otherUserId.slice(-4)}`;
-            let pictureUrl = '';
-            
-            const otherUser = allUsers.find((u: BackendUser) => u.userId === otherUserId);
-            if (otherUser) {
-              displayName = otherUser.displayName || displayName;
-              pictureUrl = otherUser.pictureUrl || '';
-            }
-            
+          
+          // Find user details from allUsers array
+          let displayName = `User ${otherUserId.slice(-4)}`;
+          let pictureUrl = '';
+          
+          const otherUser = allUsers.find((u: BackendUser) => u.userId === otherUserId);
+          if (otherUser) {
+            displayName = otherUser.displayName || displayName;
+            // Try different possible picture field names
+            pictureUrl = otherUser.pictureUrl || '';
+            console.log('👤 Found user details:', { userId: otherUserId, displayName, pictureUrl: pictureUrl || 'No picture URL' });
+          } else {
+            console.log('❌ User not found in allUsers:', otherUserId);
+          }
+          
+          if (!existing) {
             peopleMap.set(otherUserId, {
               userId: otherUserId,
               displayName,
               pictureUrl,
               lastTransactionDate: txn.createdAt,
-              transactionCount: (existing?.transactionCount || 0) + 1
+              transactionCount: 1
             });
+            console.log('🆕 Added new person:', otherUserId);
+          } else {
+            // Update transaction count and latest date if this transaction is more recent
+            if (new Date(txn.createdAt) > new Date(existing.lastTransactionDate)) {
+              existing.lastTransactionDate = txn.createdAt;
+            }
+            existing.transactionCount += 1;
+            console.log('📈 Updated existing person:', otherUserId, 'count:', existing.transactionCount);
           }
         }
       });
@@ -481,11 +494,11 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
                 <div className="relative w-12 h-12">
                   <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-green-100">
                     <img 
-                      src={person.pictureUrl || `https://randomuser.me/api/portraits/men/${Math.floor(Math.random() * 30)}.jpg`}
-                      alt={person.displayName}
+                      src={person.pictureUrl || `https://ui-avatars.com/api/?name=${person.userId}&background=random&color=fff&size=48`}
+                      alt={person.userId}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        e.currentTarget.src = `https://randomuser.me/api/portraits/women/${Math.floor(Math.random() * 30)}.jpg`;
+                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${person.userId}&background=random&color=fff&size=48`;
                       }}
                     />
                   </div>
@@ -496,7 +509,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
                   )}
                 </div>
                 <span className="text-xs text-gray-600 truncate max-w-[60px]">
-                  {person.displayName.length > 8 ? person.displayName.slice(0, 8) + '...' : person.displayName}
+                  {person.userId.length > 8 ? person.userId.slice(0, 8) + '...' : person.userId}
                 </span>
               </button>
             ))
@@ -504,6 +517,85 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
             <div className="w-full text-center py-8 text-gray-500">
               <p className="text-sm">No recent transactions</p>
               <p className="text-xs text-gray-400 mt-1">Start transacting to see recent people here</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Recent Transactions */}
+      <section className="px-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-gray-900">Recent Transactions</h2>
+          <button 
+            onClick={() => onTabChange?.('history')}
+            className="text-green-600 text-sm font-medium hover:text-green-700 transition-colors"
+          >
+            View All
+          </button>
+        </div>
+        <div className="bg-white rounded-2xl p-4 shadow-lg">
+          {loading ? (
+            // Loading skeleton
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0">
+                <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
+                <div className="flex-1">
+                  <div className="w-24 h-4 bg-gray-200 rounded animate-pulse mb-1"></div>
+                  <div className="w-16 h-3 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            ))
+          ) : transactions.length > 0 ? (
+            transactions.slice(0, 5).map((txn) => {
+              const otherUserId = txn.transactionType === 'P2P' 
+                ? (txn.senderId === currentUserProfile?.userId ? txn.receiverId : txn.senderId)
+                : txn.transactionType === 'Bulk Transfer' 
+                  ? (txn.senderId === currentUserProfile?.userId ? txn.receiverIds?.[0] : txn.senderId)
+                  : txn.transactionType === 'Split Payment'
+                    ? (txn.payeeId === currentUserProfile?.userId ? txn.contributorIds?.[0] : txn.payeeId)
+                    : null;
+
+              const otherUser = allUsers.find((u: BackendUser) => u.userId === otherUserId);
+              const isReceived = txn.receiverId === currentUserProfile?.userId || 
+                                 txn.receiverIds?.includes(currentUserProfile?.userId || '') ||
+                                 (txn.transactionType === 'Split Payment' && txn.payeeId === currentUserProfile?.userId);
+
+              return (
+                <div key={txn._id} className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0">
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100">
+                    <img 
+                      src={otherUser?.pictureUrl || `https://ui-avatars.com/api/?name=${otherUserId}&background=random&color=fff&size=40`}
+                      alt={otherUserId || 'User'}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${otherUserId}&background=random&color=fff&size=40`;
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">
+                      {otherUserId || 'Unknown User'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {txn.transactionType} • {new Date(txn.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-sm font-semibold ${isReceived ? 'text-green-600' : 'text-red-600'}`}>
+                      {isReceived ? '+' : '-'}{txn.amount} USDT
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {Array.isArray(txn.status) ? 'Split Payment' : txn.status}
+                    </p>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p className="text-sm">No transactions yet</p>
+              <p className="text-xs text-gray-400 mt-1">Start making payments to see transactions here</p>
             </div>
           )}
         </div>
