@@ -275,10 +275,12 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
 
   // Load data when component mounts or user changes
   useEffect(() => {
-    fetchAllUsersAndCurrentProfile().then(() => {
-      fetchTransactionHistory();
-    });
-  }, [fetchAllUsersAndCurrentProfile, fetchTransactionHistory]);
+    if (user?.userId) {
+      fetchAllUsersAndCurrentProfile().then(() => {
+        fetchTransactionHistory();
+      });
+    }
+  }, [user?.userId]); // Only run when user changes
 
   const handleQRScan = (result: string) => {
     console.log("QR Code scanned:", result);
