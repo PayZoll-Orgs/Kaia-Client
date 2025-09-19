@@ -26,6 +26,15 @@ interface QRPayData {
   message?: string;
 }
 
+interface BackendUser {
+  _id: string;
+  userId: string;
+  displayName: string;
+  pictureUrl?: string;
+  walletAddress: string;
+  lineUserId: string;
+}
+
 interface User {
   _id?: string;
   userId?: string;
@@ -53,6 +62,10 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  // User management
+  const [allUsers, setAllUsers] = useState<BackendUser[]>([]);
+  const [recipientUser, setRecipientUser] = useState<BackendUser | null>(null);
+  
   // Balance checking
   const [userBalance, setUserBalance] = useState<string>('0');
   const [loadingBalance, setLoadingBalance] = useState(false);
@@ -78,12 +91,44 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
     }
   }, [wallet.address]);
 
+  // Fetch all users for recipient lookup
+  const fetchAllUsers = useCallback(async () => {
+    try {
+      console.log('🔍 Fetching all users from backend...');
+      const response = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.AUTH.GET_ALL_USERS}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const users = await response.json();
+        console.log('📋 Retrieved users:', users.length);
+        setAllUsers(users);
+      } else {
+        console.error('Failed to fetch users:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  }, []);
+
+  // Find recipient by wallet address
+  const findRecipientByWallet = (walletAddress: string): BackendUser | null => {
+    return allUsers.find(user => 
+      user.walletAddress?.toLowerCase() === walletAddress.toLowerCase()
+    ) || null;
+  };
+
   // Load balance when modal opens
   useEffect(() => {
     if (isOpen) {
       loadBalance();
+      fetchAllUsers();
       setMode('scan');
       setScannedData(null);
+      setRecipientUser(null);
       setAmount('');
       setMessage('');
       setGenerateAmount('');
@@ -91,7 +136,7 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
       setError(null);
       setShowScanner(false);
     }
-  }, [isOpen, loadBalance]);
+  }, [isOpen, loadBalance, fetchAllUsers]);
 
   // Generate QR code data
   const generateQRData = (): QRPayData => {
@@ -108,28 +153,47 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
   // Handle QR code scan
   const handleQRScan = (data: string) => {
     try {
-      console.log('QR data scanned:', data);
+      console.log('🔍 QR data scanned:', data);
       
-      // Try to parse as JSON
       let parsedData: QRPayData;
+      let foundRecipient: BackendUser | null = null;
+      
+      // Try to parse as JSON first (generated QR codes)
       try {
-        parsedData = JSON.parse(data);
-      } catch {
-        // If not JSON, check if it's a wallet address
-        if (data.startsWith('0x') && data.length === 42) {
-          parsedData = {
-            type: 'kaiapay_payment',
-            recipientAddress: data,
-            currency: 'USDT'
-          };
+        const jsonData = JSON.parse(data);
+        
+        // Check if it's our generated QR format
+        if (jsonData.type === 'kaiapay_payment' && jsonData.recipientAddress) {
+          parsedData = jsonData;
+          console.log('✅ Parsed as generated QR code:', parsedData);
+          
+          // Find recipient in our user database
+          foundRecipient = findRecipientByWallet(parsedData.recipientAddress);
+          console.log('🔍 Found recipient:', foundRecipient);
         } else {
           throw new Error('Invalid QR code format');
         }
+      } catch (jsonError) {
+        // If not JSON, check if it's just a wallet address
+        if (data.startsWith('0x') && data.length === 42) {
+          parsedData = {
+            type: 'wallet_address',
+            recipientAddress: data,
+            currency: 'USDT'
+          };
+          console.log('✅ Parsed as wallet address:', parsedData);
+          
+          // Find recipient in our user database
+          foundRecipient = findRecipientByWallet(data);
+          console.log('🔍 Found recipient:', foundRecipient);
+        } else {
+          throw new Error('Invalid QR code format. Please scan a valid payment QR or wallet address.');
+        }
       }
       
-      // Validate data structure
-      if (parsedData.type !== 'kaiapay_payment' || !parsedData.recipientAddress) {
-        throw new Error('Invalid payment QR code');
+      // Validate recipient address
+      if (!parsedData.recipientAddress) {
+        throw new Error('Invalid QR code: No recipient address found');
       }
       
       // Check if trying to pay yourself
@@ -137,15 +201,19 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
         throw new Error('Cannot send payment to yourself');
       }
       
+      // Set the scanned data and recipient
       setScannedData(parsedData);
+      setRecipientUser(foundRecipient);
       setAmount(parsedData.amount || '');
       setMessage(parsedData.message || '');
       setMode('pay');
       setShowScanner(false);
       setError(null);
       
+      console.log('✅ QR scan successful, moving to pay mode');
+      
     } catch (error) {
-      console.error('QR scan error:', error);
+      console.error('❌ QR scan error:', error);
       setError(error instanceof Error ? error.message : 'Failed to process QR code');
     }
   };
@@ -202,16 +270,28 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
         throw new Error(transferResult.error || 'Transfer failed');
       }
 
-      // Record transaction in backend (using P2P endpoint since it's same structure)
+      // Record transaction in backend (same as PayAnyone)
       console.log('📝 Recording QR payment transaction...');
+      
+      // Get current user's userId from allUsers (same logic as PayAnyone)
+      const currentUser = allUsers.find(u => u.lineUserId === user?.userId);
+      const senderUserId = currentUser?.userId || user?.userId; // fallback to LINE userId if not found
+      
+      console.log('✅ Using backend userId as senderId:', senderUserId);
+      
+      // If we have a recipient user in our database, use their userId, otherwise use wallet address
+      const receiverId = recipientUser?.userId || scannedData.recipientAddress;
+      
+      console.log('✅ Using receiverId:', receiverId);
+
       const recordResponse = await fetch(`${CONFIG.BACKEND_URL}${API_ENDPOINTS.P2P.RECORD}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          senderId: user.userId,
-          receiverId: scannedData.recipientAddress, // Use address as ID for QR payments
+          senderId: senderUserId,
+          receiverId: receiverId,
           amount: parseFloat(amount),
           transactionHash: transferResult.transactionHash,
           status: 'completed'
@@ -227,8 +307,9 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
       
       // Create a recipient object for the success callback
       const recipient = {
-        displayName: scannedData.recipientName || `Address ${scannedData.recipientAddress.slice(0, 6)}...`,
-        walletAddress: scannedData.recipientAddress
+        displayName: recipientUser?.displayName || scannedData.recipientName || `Address ${scannedData.recipientAddress.slice(0, 6)}...`,
+        walletAddress: scannedData.recipientAddress,
+        userId: recipientUser?.userId
       };
       
       onSuccess(transferResult.transactionHash!, recipient, amount);
@@ -249,6 +330,24 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
       // Show temporary success feedback
     } catch (error) {
       console.error('Failed to copy QR data:', error);
+    }
+  };
+
+  // Download QR code as image
+  const downloadQRCode = () => {
+    try {
+      const canvas = document.querySelector('canvas') as HTMLCanvasElement;
+      if (canvas) {
+        const url = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = `kaiapay-qr-${Date.now()}.png`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error('Failed to download QR code:', error);
     }
   };
 
@@ -347,9 +446,16 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
                   <div className="relative">
                     <Scanner
                       onScan={(result) => {
+                        console.log('📷 Scanner result:', result);
                         if (result && result.length > 0) {
-                          handleQRScan(result[0].rawValue);
+                          const scannedText = result[0].rawValue;
+                          console.log('📋 Scanned text:', scannedText);
+                          handleQRScan(scannedText);
                         }
+                      }}
+                      onError={(error) => {
+                        console.error('📷 Scanner error:', error);
+                        setError('Camera error. Please try again.');
                       }}
                       components={{
                         finder: true
@@ -361,6 +467,7 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
                           margin: '0 auto'
                         }
                       }}
+                      scanDelay={100}
                     />
                   </div>
                   <button
@@ -427,17 +534,26 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={copyQRData}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 px-4 border border-gray-300 rounded-lg hover:border-gray-400 transition-colors text-sm font-medium text-gray-700"
+                    className="flex items-center justify-center gap-1 py-2 px-3 border border-gray-300 rounded-lg hover:border-gray-400 transition-colors text-xs font-medium text-gray-700"
                   >
                     <ClipboardDocumentIcon className="w-4 h-4" />
                     Copy
                   </button>
                   <button
+                    onClick={downloadQRCode}
+                    className="flex items-center justify-center gap-1 py-2 px-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors text-xs font-medium text-green-700"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Download
+                  </button>
+                  <button
                     onClick={shareQRData}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium text-blue-700"
+                    className="flex items-center justify-center gap-1 py-2 px-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-xs font-medium text-blue-700"
                   >
                     <ShareIcon className="w-4 h-4" />
                     Share
@@ -453,21 +569,48 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
               {/* Recipient Info */}
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                    <QrCodeIconOutline className="w-6 h-6 text-blue-600" />
-                  </div>
+                  {recipientUser ? (
+                    // Show user avatar if we found them in our database
+                    <div className="w-12 h-12 rounded-full bg-gray-100 overflow-hidden">
+                      <img
+                        src={recipientUser.pictureUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(recipientUser.displayName)}&background=random`}
+                        alt={recipientUser.displayName}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    // Show QR icon for unknown recipients
+                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                      <QrCodeIconOutline className="w-6 h-6 text-blue-600" />
+                    </div>
+                  )}
                   <div>
                     <div className="font-medium text-gray-900">
-                      {scannedData.recipientName || 'Unknown Recipient'}
+                      {recipientUser?.displayName || scannedData.recipientName || 'Unknown Recipient'}
                     </div>
+                    {recipientUser && (
+                      <div className="text-sm text-gray-500">@{recipientUser.userId}</div>
+                    )}
                     <div className="text-sm text-gray-600 font-mono">
                       {scannedData.recipientAddress.slice(0, 8)}...{scannedData.recipientAddress.slice(-6)}
                     </div>
+                    {!recipientUser && (
+                      <div className="text-xs text-orange-600 mt-1">
+                        ⚠️ External wallet (not in our network)
+                      </div>
+                    )}
                   </div>
                 </div>
                 {scannedData.message && (
                   <div className="mt-3 p-2 bg-white rounded border border-blue-200">
                     <p className="text-sm text-gray-700">{scannedData.message}</p>
+                  </div>
+                )}
+                {scannedData.type === 'wallet_address' && (
+                  <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                    <p className="text-xs text-yellow-800">
+                      💡 Wallet address detected. Enter the amount you want to send.
+                    </p>
                   </div>
                 )}
               </div>
