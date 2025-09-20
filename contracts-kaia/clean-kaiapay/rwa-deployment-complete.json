@@ -1,0 +1,54 @@
+{
+  "network": "kairos",
+  "chainId": "1001",
+  "deployer": "0xEEFfe4C8B285A3f55EEC9fB50C9c96F69f9B453e",
+  "deploymentTime": "2025-09-20T03:39:03.455Z",
+  "gasUsed": "TBD",
+  "contracts": {
+    "USDY": "0xC4F121aa9293c2B261bb9143b4c59b9BC9912B6c",
+    "DummyUSDT": "0xd55B72640f3e31910A688a2Dc81876F053115B09",
+    "kKAIA": "0xf38b06fcf9e107EBb3AE2104D57CC3dF7279F64B",
+    "kUSDT": "0xB6369bfC61b27856A8DCA6bebE1a51766C767133",
+    "LendingProtocol": "0x4e11Fd6d94059aDDEA9Ea8A81a0c40881d5E5fB6"
+  },
+  "contractDetails": {
+    "USDY": {
+      "name": "USD Yield Token",
+      "symbol": "USDY",
+      "purpose": "RWA collateral token with faucet",
+      "faucetAmount": "1000 USDY per claim",
+      "cooldown": "24 hours"
+    },
+    "DummyUSDT": {
+      "name": "Dummy USDT",
+      "symbol": "DUSDT",
+      "purpose": "Lending/borrowing token with faucet",
+      "faucetAmount": "1000 USDT per claim",
+      "cooldown": "24 hours"
+    },
+    "kKAIA": {
+      "name": "Kaia LP Token",
+      "symbol": "kKAIA",
+      "purpose": "LP token for KAIA lending"
+    },
+    "kUSDT": {
+      "name": "USDT LP Token",
+      "symbol": "kUSDT",
+      "purpose": "LP token for USDT lending"
+    },
+    "LendingProtocol": {
+      "purpose": "Main lending/borrowing contract",
+      "features": [
+        "USDY collateral",
+        "KAIA/USDT lending",
+        "Bonding curve LP tokens",
+        "Orakl price feeds"
+      ]
+    }
+  },
+  "pricing": {
+    "kaiaPrice": "0.15 USD",
+    "usdtPrice": "1.0 USD",
+    "lpTokenPrice": "1.0 USDT"
+  }
+}

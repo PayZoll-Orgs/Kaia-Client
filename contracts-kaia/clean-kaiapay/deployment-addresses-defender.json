@@ -1,0 +1,12 @@
+{
+  "network": "kaia-testnet",
+  "chainId": 1001,
+  "timestamp": "2025-09-13T18:51:18.350Z",
+  "deployer": "0xEEFfe4C8B285A3f55EEC9fB50C9c96F69f9B453e",
+  "contracts": {
+    "DummyUSDT": "0xD68805CeC8704e0E262Afa2289EB298b1bD98ce8",
+    "BulkPayroll": "0xC6D5Eca0d7390bf95e5331EbD4274D3b177961e8",
+    "SplitBilling": "0x2B0426A3ECE73A9E2e361f111d96bdc6b13495a3",
+    "InvoiceSubscription": "0x56CFAFDdb032BCb5c1697053993aB3406efd6Eb9"
+  }
+}

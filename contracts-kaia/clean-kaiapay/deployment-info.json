@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-09-19T19:23:26.611Z",
+  "network": "kairos",
+  "deployer": "0xEEFfe4C8B285A3f55EEC9fB50C9c96F69f9B453e",
+  "contracts": {
+    "tokenizedGold": "0xcAD0aFBb12BAE72B668638D2EeE256Cf1c6471a3",
+    "tokenizedSilver": "0x21Ec468d7617D0797b57e7Eb328b119910695ac5",
+    "tokenizedRealEstate": "0xE9157898C8E14b92616Ac02B8574c1071fDD6d69",
+    "dummyUSDT": "0x07bA937403023CcD444923B183d42438b7057811",
+    "lendingPlatform": "0xB982fa5cfA67158784F4AD2B7DBe711169D4aDED",
+    "demoContract": "0x447932A8db4a4401471EFDeB45db90d3772DbcF9"
+  }
+}

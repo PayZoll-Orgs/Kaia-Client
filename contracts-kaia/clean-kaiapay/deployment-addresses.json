@@ -1,0 +1,14 @@
+{
+  "network": "kairos",
+  "timestamp": "2025-09-19T20:56:53.083Z",
+  "deployer": "0xEEFfe4C8B285A3f55EEC9fB50C9c96F69f9B453e",
+  "contracts": {
+    "DummyUSDT": "0x07bA937403023CcD444923B183d42438b7057811",
+    "BulkPayroll": "0x02C922635f0E55857c2fD304Da416089945Fee7c",
+    "SplitBilling": "0x53970C03Daa04471e2bdDA7488fbcc557D4899d9",
+    "InvoiceSubscription": "0x56CFAFDdb032BCb5c1697053993aB3406efd6Eb9",
+    "LendingProtocol": "0x48e9cc043c196617E72376C1054690ecAAB2D30F",
+    "kKAIA": "0xF391b2E2F6eade1911631b82babA874F67553562",
+    "kUSDT": "0x5a6884A444f9e7BAB7a105CF4b1C4b665850EED3"
+  }
+}

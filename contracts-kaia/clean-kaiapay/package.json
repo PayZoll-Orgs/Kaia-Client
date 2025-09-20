@@ -1,0 +1,54 @@
+{
+  "name": "kaiapay-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for KaiaPay - BulkPayroll, SplitBilling, InvoiceSubscription, and DummyUSDT",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile --config hardhat.config.cjs",
+    "test": "hardhat test --config hardhat.config.cjs",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost --config hardhat.config.cjs",
+    "deploy:kairos": "hardhat run scripts/deploy.js --network kairos --config hardhat.config.cjs",
+    "deploy:defender": "hardhat run scripts/deploy-defender.js --network kairos --config hardhat.config.cjs",
+    "deploy:bulk": "hardhat run scripts/deploy-bulkpayroll.js --network kairos --config hardhat.config.cjs",
+    "deploy:split": "hardhat run scripts/deploy-splitbilling.js --network kairos --config hardhat.config.cjs",
+    "deploy:invoice": "hardhat run scripts/deploy-invoicesubscription.js --network kairos --config hardhat.config.cjs",
+    "deploy:invoice:defender": "hardhat run scripts/deploy-invoicesubscription-defender.js --network kairos --config hardhat.config.cjs",
+    "deploy:usdt": "hardhat run scripts/deploy-dummyusdt.js --network kairos --config hardhat.config.cjs",
+    "deploy:rwa": "node scripts/deploy-rwa-platform.js",
+    "verify:pre": "node scripts/verify-pre-deployment.js",
+    "verify:post": "node scripts/verify-post-deployment.js",
+    "test:user-flow": "node scripts/test-user-flow.js",
+    "test:bulk": "hardhat test test/BulkPayroll.test.js --config hardhat.config.cjs",
+    "test:split": "hardhat test test/SplitBilling.test.js --config hardhat.config.cjs",
+    "test:invoice": "hardhat test test/InvoiceSubscription.test.js --config hardhat.config.cjs",
+    "test:usdt": "hardhat test test/DummyUSDT.test.js --config hardhat.config.cjs",
+    "simulate": "hardhat run scripts/simulate-all.js --network kairos --config hardhat.config.cjs",
+    "test:flow": "hardhat run scripts/test-flow-clean.js --network kairos --config hardhat.config.cjs",
+    "test:splitbilling": "hardhat run scripts/test-splitbilling-flow.js --network kairos --config hardhat.config.cjs",
+    "validate": "node scripts/validate-setup.js"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
+    "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@typechain/hardhat": "^9.1.0",
+    "ethers": "^6.13.0",
+    "hardhat": "^2.22.0"
+  },
+  "dependencies": {
+    "@bisonai/orakl-contracts": "^2.0.2",
+    "@chainlink/contracts": "^1.2.0",
+    "@openzeppelin/contracts": "^5.4.0",
+    "dotenv": "^16.4.0"
+  },
+  "keywords": [
+    "solidity",
+    "ethereum",
+    "kaia",
+    "smart-contracts",
+    "hardhat",
+    "defi"
+  ],
+  "author": "KaiaPay Team",
+  "license": "MIT"
+}
