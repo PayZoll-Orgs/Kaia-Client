@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import enhancedLendingService, { type ReferralInfo } from '@/lib/enhanced-lending-service';
 import { DocumentDuplicateIcon, ShareIcon } from '@heroicons/react/24/outline';
@@ -18,25 +18,18 @@ export default function EnhancedReferEarnModal({ onClose }: EnhancedReferEarnMod
   const [isRegistering, setIsRegistering] = useState(false);
 
   // Generate user's referral code based on their profile
-  const generateReferralCode = () => {
+  const generateReferralCode = useCallback(() => {
     if (userProfile?.displayName) {
       const name = userProfile.displayName.replace(/\s+/g, '').toUpperCase();
       const timestamp = Date.now().toString().slice(-4);
       return `${name}_${timestamp}`;
     }
     return `USER_${Date.now().toString().slice(-6)}`;
-  };
+  }, [userProfile?.displayName]);
 
   const referralLink = `https://kaiapay.app/join?ref=${referralCode}&referrer=${userProfile?.walletAddress}`;
 
-  // Load referral information
-  useEffect(() => {
-    if (userProfile?.walletAddress) {
-      loadReferralInfo();
-    }
-  }, [userProfile?.walletAddress]);
-
-  const loadReferralInfo = async () => {
+  const loadReferralInfo = useCallback(async () => {
     try {
       if (!userProfile?.walletAddress) return;
       
@@ -50,7 +43,14 @@ export default function EnhancedReferEarnModal({ onClose }: EnhancedReferEarnMod
     } catch (error) {
       console.error('Failed to load referral info:', error);
     }
-  };
+  }, [userProfile?.walletAddress, generateReferralCode]);
+
+  // Load referral information
+  useEffect(() => {
+    if (userProfile?.walletAddress) {
+      loadReferralInfo();
+    }
+  }, [userProfile?.walletAddress, loadReferralInfo]);
 
   const handleRegisterReferralCode = async () => {
     try {

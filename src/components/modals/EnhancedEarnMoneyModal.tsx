@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import enhancedLendingService, { type LenderInfo } from '@/lib/enhanced-lending-service';
 import { USDT_ADDRESS, KAIA_ADDRESS } from '@/lib/contract-addresses';
@@ -18,19 +18,12 @@ export default function EnhancedEarnMoneyModal({ onClose }: EnhancedEarnMoneyMod
   const [lenderInfo, setLenderInfo] = useState<LenderInfo | null>(null);
 
   // Asset configuration
-  const assets = {
+  const assets = useMemo(() => ({
     'USDT': { icon: '💲', address: USDT_ADDRESS(), name: 'USDT' },
     'KAIA': { icon: '🔸', address: KAIA_ADDRESS(), name: 'KAIA' }
-  };
+  }), []);
 
-  // Load lender information
-  useEffect(() => {
-    if (userProfile?.walletAddress) {
-      loadLenderInfo();
-    }
-  }, [userProfile?.walletAddress, selectedAsset]);
-
-  const loadLenderInfo = async () => {
+  const loadLenderInfo = useCallback(async () => {
     try {
       if (!userProfile?.walletAddress) return;
       
@@ -40,7 +33,14 @@ export default function EnhancedEarnMoneyModal({ onClose }: EnhancedEarnMoneyMod
     } catch (error) {
       console.error('Failed to load lender info:', error);
     }
-  };
+  }, [userProfile?.walletAddress, selectedAsset, assets]);
+
+  // Load lender information
+  useEffect(() => {
+    if (userProfile?.walletAddress) {
+      loadLenderInfo();
+    }
+  }, [userProfile?.walletAddress, loadLenderInfo]);
 
   const handleLend = async () => {
     try {

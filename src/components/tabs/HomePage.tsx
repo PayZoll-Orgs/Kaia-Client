@@ -289,7 +289,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
         fetchTransactionHistory();
       });
     }
-  }, [user?.userId]); // Only run when user changes
+  }, [user?.userId, fetchAllUsersAndCurrentProfile, fetchTransactionHistory]); // Only run when user changes
 
   const handleQRScan = (result: string) => {
     console.log("QR Code scanned:", result);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import enhancedLendingService, { type BorrowerDashboard, type DebtBreakdown } from '@/lib/enhanced-lending-service';
 import { USDT_ADDRESS, KAIA_ADDRESS, USDY_ADDRESS } from '@/lib/contract-addresses';
@@ -22,27 +22,13 @@ export default function EnhancedTakeLoanModal({ onClose }: EnhancedTakeLoanModal
   const [debtBreakdown, setDebtBreakdown] = useState<DebtBreakdown | null>(null);
 
   // Token configuration
-  const tokens = {
+  const tokens = useMemo(() => ({
     'USDT': { icon: '💲', address: USDT_ADDRESS(), name: 'USDT' },
     'KAIA': { icon: '🔸', address: KAIA_ADDRESS(), name: 'KAIA' },
     'USDY': { icon: '💎', address: USDY_ADDRESS(), name: 'USDY' }
-  };
+  }), []);
 
-  // Load borrower information
-  useEffect(() => {
-    if (userProfile?.walletAddress) {
-      loadBorrowerInfo();
-    }
-  }, [userProfile?.walletAddress]);
-
-  // Load debt breakdown when selected token changes
-  useEffect(() => {
-    if (userProfile?.walletAddress && activeTab === 'repayLoan') {
-      loadDebtBreakdown();
-    }
-  }, [userProfile?.walletAddress, selectedToken, activeTab]);
-
-  const loadBorrowerInfo = async () => {
+  const loadBorrowerInfo = useCallback(async () => {
     try {
       if (!userProfile?.walletAddress) return;
       
@@ -51,9 +37,9 @@ export default function EnhancedTakeLoanModal({ onClose }: EnhancedTakeLoanModal
     } catch (error) {
       console.error('Failed to load borrower info:', error);
     }
-  };
+  }, [userProfile?.walletAddress]);
 
-  const loadDebtBreakdown = async () => {
+  const loadDebtBreakdown = useCallback(async () => {
     try {
       if (!userProfile?.walletAddress) return;
       
@@ -63,7 +49,21 @@ export default function EnhancedTakeLoanModal({ onClose }: EnhancedTakeLoanModal
     } catch (error) {
       console.error('Failed to load debt breakdown:', error);
     }
-  };
+  }, [userProfile?.walletAddress, selectedToken, tokens]);
+
+  // Load borrower information
+  useEffect(() => {
+    if (userProfile?.walletAddress) {
+      loadBorrowerInfo();
+    }
+  }, [userProfile?.walletAddress, loadBorrowerInfo]);
+
+  // Load debt breakdown when selected token changes
+  useEffect(() => {
+    if (userProfile?.walletAddress && activeTab === 'repayLoan') {
+      loadDebtBreakdown();
+    }
+  }, [userProfile?.walletAddress, selectedToken, activeTab, loadDebtBreakdown]);
 
   const calculateCollateral = (borrowAmt: string) => {
     const amount = parseFloat(borrowAmt) || 0;
