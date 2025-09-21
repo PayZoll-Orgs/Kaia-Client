@@ -44,7 +44,7 @@ export const KAIA_TESTNET_CONFIG = {
 } as const;
 
 // USDT Contract on Kaia Testnet (MyDummyTokenWithFaucet - verified and deployed)
-export const TESTNET_USDT_CONTRACT = '0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193';
+export const TESTNET_USDT_CONTRACT = '0xd55B72640f3e31910A688a2Dc81876F053115B09';
 
 // DappPortal SDK types
 interface DappPortalSDK {

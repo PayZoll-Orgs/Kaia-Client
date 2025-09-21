@@ -113,7 +113,7 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
 
   // Contract addresses
   const BULK_PAYROLL_ADDRESS = '0xE9bD986514a6d35B1B73BeA6F19804D3c7aed284';
-  const USDT_ADDRESS = '0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193';
+  const USDT_ADDRESS = '0xd55B72640f3e31910A688a2Dc81876F053115B09';
 
   // Load user's USDT balance
   const loadBalance = useCallback(async () => {
