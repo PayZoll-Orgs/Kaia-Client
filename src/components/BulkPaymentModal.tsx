@@ -48,47 +48,7 @@ interface BulkPaymentModalProps {
   onSuccess: (paymentData: BulkPaymentData) => void;
 }
 
-// Utility function to encode parameters for bulkTransfer(address, address[], uint256[])
-function encodeBulkTransferData(token: string, recipients: string[], amounts: string[]): string {
-  // ABI encoding for bulkTransfer(address token, address[] recipients, uint256[] amounts)
-  // Structure: [token_address][offset1][offset2][array1_length][array1_data...][array2_length][array2_data...]
-  
-  const recipientCount = recipients.length;
-  const amountCount = amounts.length;
-  
-  // Encode token address (32 bytes)
-  const paddedToken = token.toLowerCase().replace('0x', '').padStart(64, '0');
-  
-  // Convert addresses to 32-byte hex strings (pad to 64 chars)
-  const paddedRecipients = recipients.map(addr => 
-    addr.toLowerCase().replace('0x', '').padStart(64, '0')
-  );
-  
-  // Convert amounts to 32-byte hex strings
-  const paddedAmounts = amounts.map(amount => {
-    // Convert amount string to bigint, then to hex
-    const amountWei = BigInt(amount);
-    return amountWei.toString(16).padStart(64, '0');
-  });
-  
-  // Calculate offsets (each offset is 32 bytes = 64 hex chars)
-  // First array starts after token (32 bytes) + 2 offsets (64 bytes) = 96 bytes = 0x60
-  const offset1 = '0000000000000000000000000000000000000000000000000000000000000060'; // 96 bytes
-  const offset2 = (96 + 32 + recipientCount * 32).toString(16).padStart(64, '0'); // After first array
-  
-  // Encode recipient array
-  const recipientLength = recipientCount.toString(16).padStart(64, '0');
-  const recipientData = paddedRecipients.join('');
-  
-  // Encode amount array
-  const amountLength = amountCount.toString(16).padStart(64, '0');
-  const amountData = paddedAmounts.join('');
-  
-  // Combine all parts: token + offset1 + offset2 + recipients_array + amounts_array
-  const encoded = '0x' + paddedToken + offset1 + offset2 + recipientLength + recipientData + amountLength + amountData;
-  
-  return encoded;
-}
+// Now using ethers.js for proper ABI encoding of bulkTransfer(address[], uint256[])
 
 export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPaymentModalProps) {
   const { user, wallet } = useAuth();
@@ -332,15 +292,10 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
 
       console.log('✅ USDT approval successful:', approveTx);
 
-      // Step 2: Execute bulk transfer
+      // Step 2: Execute bulk transfer using proper contract call (matches working script)
       console.log('📦 Executing bulk transfer...');
       
-      // BulkPayroll.bulkTransfer function selector and parameter encoding
-      // Method signature: bulkTransfer(address,address[],uint256[])
-      // Method ID: 0xc75deb12 (calculated from correct signature)
-      const bulkTransferSelector = '0xc75deb12';
-      
-      // Extract addresses and amounts for encoding
+      // Prepare recipients and amounts arrays (exactly like the working script)
       const contractRecipients = recipients.map(r => r.address);
       const contractAmounts = recipients.map(r => {
         // Convert amount to wei (18 decimals for USDT)
@@ -348,23 +303,47 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
         return amountInWei.toString();
       });
       
-      // Encode parameters for bulkTransfer(address[] recipients, uint256[] amounts)
-      const encodedData = encodeBulkTransferData(CONFIG.USDT_ADDRESS, contractRecipients, contractAmounts);
-      const callData = bulkTransferSelector + encodedData.slice(2); // Remove 0x from encoded data
-      
-      console.log('📦 Executing bulk transfer with proper ABI encoding');
       console.log('📊 Transaction summary:', {
         recipientCount: recipients.length,
         totalAmount: totalAmount,
-        gasEstimate: '0x30d40', // ~200000 gas
-        callData: callData.slice(0, 42) + '...' // Show first 20 bytes of call data
+        recipients: contractRecipients,
+        amounts: contractAmounts.map(a => (BigInt(a) / BigInt(10**18)).toString() + ' USDT')
       });
+
+      // Use ethers.js contract interface to call bulkTransfer (matches script approach)
+      const { ethers } = await import('ethers');
+      const provider = new ethers.JsonRpcProvider(CONFIG.RPC_URL);
+      
+      // BulkPayroll contract ABI for bulkTransfer function
+      const bulkPayrollABI = [
+        {
+          "inputs": [
+            { "internalType": "address[]", "name": "recipients", "type": "address[]" },
+            { "internalType": "uint256[]", "name": "amounts", "type": "uint256[]" }
+          ],
+          "name": "bulkTransfer",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        }
+      ];
+      
+      const bulkPayrollContract = new ethers.Contract(BULK_PAYROLL_ADDRESS, bulkPayrollABI, provider);
+      
+      // Encode the function call data using ethers (this will be correct)
+      const callData = bulkPayrollContract.interface.encodeFunctionData('bulkTransfer', [
+        contractRecipients,
+        contractAmounts
+      ]);
+      
+      console.log('📦 Using proper ethers.js encoding for bulkTransfer(address[], uint256[])');
+      console.log('Method signature matches working script exactly');
 
       const bulkTx = await walletService.sendTransaction(
         BULK_PAYROLL_ADDRESS,
         '0x0',
         '0x30d40', // Gas limit for bulk transfer (~200000)
-        callData // Complete function call with encoded parameters
+        callData // Properly encoded function call
       );
 
       console.log('✅ Bulk payment transaction sent:', bulkTx);
