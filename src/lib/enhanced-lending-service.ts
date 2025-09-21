@@ -177,14 +177,17 @@ class EnhancedLendingService {
       // Convert amount to wei (18 decimals)
       const amountInWei = Math.round(parseFloat(amount) * Math.pow(10, 18));
       
-      // Create deposit transaction data: deposit(uint256)
-      const depositMethodId = '0xb6b55f25'; // deposit(uint256)
+      // Create deposit transaction data: deposit(address,uint256)
+      const depositMethodId = '0x47e7ef24'; // deposit(address,uint256)
+      const paddedTokenAddress = tokenAddress.replace('0x', '').toLowerCase().padStart(64, '0');
       const paddedAmount = amountInWei.toString(16).padStart(64, '0');
-      const transactionData = depositMethodId + paddedAmount;
+      const transactionData = depositMethodId + paddedTokenAddress + paddedAmount;
       
       console.log('📝 Creating deposit transaction:', {
         contract: ENHANCED_LENDING_ADDRESS,
         methodId: depositMethodId,
+        function: 'deposit(address,uint256)',
+        tokenAddress: tokenAddress,
         amount: amount,
         amountInWei: amountInWei,
         data: transactionData
@@ -218,7 +221,8 @@ class EnhancedLendingService {
         transactionData // Deposit function call
       );
       
-      console.log('✅ Deposit transaction successful:', txHash);
+      console.log('✅ Enhanced lending deposit transaction successful:', txHash);
+      console.log(`🔗 View on Kaiascan: https://kairos.kaiascope.com/tx/${txHash}`);
       return txHash;
     } catch (error) {
       console.error('❌ Deposit failed:', error);
@@ -286,19 +290,25 @@ class EnhancedLendingService {
       // Enhanced Lending Contract Address (placeholder - update when deployed)
       const ENHANCED_LENDING_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
       
-      // Convert amount to wei (18 decimals)
-      const amountInWei = Math.round(parseFloat(amount) * Math.pow(10, 18));
+      // Convert amount to wei (18 decimals) - This represents LP tokens to redeem
+      const lpAmountInWei = Math.round(parseFloat(amount) * Math.pow(10, 18));
       
-      // Create withdraw transaction data: withdrawCollateral(uint256)
-      const withdrawMethodId = '0x6112fe2e'; // withdrawCollateral(uint256)
-      const paddedAmount = amountInWei.toString(16).padStart(64, '0');
-      const transactionData = withdrawMethodId + paddedAmount;
+      // Determine LP token address based on underlying token
+      const lpTokenAddress = tokenAddress === CONFIG.USDT_ADDRESS ? CONFIG.K_USDT_ADDRESS : CONFIG.K_KAIA_ADDRESS;
       
-      console.log('📝 Creating withdraw transaction:', {
+      // Create redeem transaction data: redeem(address,uint256)
+      const redeemMethodId = '0x1e9a6950'; // redeem(address,uint256)
+      const paddedLpTokenAddress = lpTokenAddress.replace('0x', '').toLowerCase().padStart(64, '0');
+      const paddedAmount = lpAmountInWei.toString(16).padStart(64, '0');
+      const transactionData = redeemMethodId + paddedLpTokenAddress + paddedAmount;
+      
+      console.log('📝 Creating redeem transaction:', {
         contract: ENHANCED_LENDING_ADDRESS,
-        methodId: withdrawMethodId,
+        methodId: redeemMethodId,
+        function: 'redeem(address,uint256)',
+        lpTokenAddress: lpTokenAddress,
         amount: amount,
-        amountInWei: amountInWei,
+        lpAmountInWei: lpAmountInWei,
         data: transactionData
       });
       
@@ -310,7 +320,8 @@ class EnhancedLendingService {
         transactionData // Withdraw function call
       );
       
-      console.log('✅ Withdraw transaction successful:', txHash);
+      console.log('✅ Enhanced lending redeem transaction successful:', txHash);
+      console.log(`🔗 View on Kaiascan: https://kairos.kaiascope.com/tx/${txHash}`);
       return txHash;
     } catch (error) {
       console.error('❌ Withdraw failed:', error);

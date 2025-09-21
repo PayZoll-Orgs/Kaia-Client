@@ -19,6 +19,10 @@ export const CONFIG = {
   INVOICE_SERVICE_ADDRESS: '0xc70DfAf8d864125D37237fc7B034ACAE1f3397d9',
   ENHANCED_LENDING_ADDRESS: '0x5FbDB2315678afecb367f032d93F642f64180aa3', // Placeholder - update when deployed
   
+  // LP Token Addresses (for Enhanced Lending Protocol)
+  K_KAIA_ADDRESS: '0x0000000000000000000000000000000000000004', // kKAIA LP token - placeholder
+  K_USDT_ADDRESS: '0x0000000000000000000000000000000000000005', // kUSDT LP token - placeholder
+  
   // LINE Configuration (from .env)
   LIFF_ID: '2008110181-oen1dWyd',
   LINE_CLIENT_ID: '2008110181',

@@ -88,6 +88,32 @@ export default function EnhancedEarnMoneyModal({ onClose }: EnhancedEarnMoneyMod
     }
   };
 
+  const handleWithdraw = async () => {
+    try {
+      if (!amount || parseFloat(amount) <= 0) {
+        alert('Please enter a valid amount');
+        return;
+      }
+
+      setLoading(true);
+      
+      const tokenAddress = assets[selectedAsset as keyof typeof assets].address;
+      const txHash = await enhancedLendingService.withdraw(tokenAddress, amount);
+      
+      console.log('✅ Withdraw successful:', txHash);
+      alert(`Successfully withdrew ${amount} ${selectedAsset}! Transaction: ${txHash.slice(0, 10)}...`);
+      
+      setAmount('');
+      await loadLenderInfo(); // Refresh data
+      
+    } catch (error) {
+      console.error('❌ Withdraw failed:', error);
+      alert('Withdraw failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Asset Icon Component
   const AssetIcon = ({ asset }: { asset: string }) => {
     return <span className="text-lg">{assets[asset as keyof typeof assets]?.icon || '💰'}</span>;
@@ -292,6 +318,7 @@ export default function EnhancedEarnMoneyModal({ onClose }: EnhancedEarnMoneyMod
                 />
               </div>
               <button 
+                onClick={handleWithdraw}
                 disabled={loading || !amount || parseFloat(amount) <= 0}
                 className="w-full bg-red-500 text-white py-3 rounded-lg font-medium hover:bg-red-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
