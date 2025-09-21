@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useScroll, useTransform, Variants } from "framer-motion";
-import { 
+import {
   Play,
   Download,
   Menu,
@@ -17,7 +17,7 @@ import {
   CheckCircle,
   Scan,
   Plus,
-  
+
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { TiltedScroll } from "@/components/ui/tilted-scroll";
@@ -30,7 +30,7 @@ interface StepEntry {
 }
 
 export default function ZenCryptoLanding() {
-  
+
 
   interface AnimatedTextProps extends React.HTMLAttributes<HTMLSpanElement> {
     text: string;
@@ -40,7 +40,7 @@ export default function ZenCryptoLanding() {
     underlineHoverPath?: string;
     underlineDuration?: number;
   }
-  
+
   const AnimatedText = React.forwardRef<HTMLSpanElement, AnimatedTextProps>(
     (
       {
@@ -68,7 +68,7 @@ export default function ZenCryptoLanding() {
           },
         },
       };
-  
+
       return (
         <span
           ref={ref}
@@ -109,109 +109,150 @@ export default function ZenCryptoLanding() {
       );
     }
   );
-  
+
   AnimatedText.displayName = "AnimatedText";
-  
-  
+
+
   // Navigation Component
   // Replace your existing Navigation component with this updated version
-const Navigation = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const Navigation = () => {
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    return (
+      <header className="fixed w-full bg-transparent bg-opacity-95 backdrop-blur-md z-50">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
 
-  const navItems = [
-    { name: 'Home', href: '#home' },
-    { name: 'Features', href: '#features' },
-    { name: 'How it works', href: '#how-it-works' },
-    { name: 'Security', href: '#security' },
-    { name: 'Support', href: '#support' },
-  ];
-
-  return (
-    <header className="fixed w-full bg-gray-900 bg-opacity-95 backdrop-blur-md border-b border-gray-800 z-50">
-    <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-      
-      {/* Logo Section - Left */}
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
-          <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+          {/* Logo Section - Left */}
+          <div className="flex items-center gap-3">
+            {/* <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+              <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              </div>
+            </div> */}
+            <span className="text-black font-bold text-3xl">PayZoll</span>
           </div>
-        </div>
-        <span className="text-white font-semibold text-xl">ZenCrypto</span>
-      </div>
 
-      {/* Navigation Menu - Center */}
-      <nav className="hidden md:flex space-x-8">
-        {navItems.map((item) => (
-          <a
-            key={item.name}
-            href={item.href}
-            className="text-gray-300 hover:text-green-400 transition-colors duration-300 font-medium"
+          {/* Navigation Menu - Center */}
+       
+
+          {/* Right Section - Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
+            <a
+              href="https://www.payzoll.xyz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-800 hover:text-gray-900 px-4 py-2 rounded-md border border-gray-600 hover:border-gray-500 transition-all duration-300"
+            >
+              Visit Site
+            </a>
+            <>
+              <button
+                onClick={() => {
+                  const modalDiv = document.createElement('div');
+                  modalDiv.className = 'fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4';
+                  modalDiv.innerHTML = `
+                    <div class="relative">
+                      <!-- Mobile Frame -->
+                      <div class="relative w-[400px] h-[780px] bg-black rounded-[3rem] p-4 shadow-2xl">
+                        <!-- Phone details -->
+                        <div class="absolute top-10 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-gray-800 rounded-full z-10"></div>
+                        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-40 h-7 bg-black rounded-b-3xl z-10 flex justify-center items-end pb-1">
+                          <div class="w-20 h-4 bg-black rounded-md flex items-center justify-center">
+                            <div class="w-2 h-2 bg-gray-600 rounded-full mr-2"></div>
+                            <div class="w-8 h-1 bg-gray-600 rounded-full"></div>
+                          </div>
+                        </div>
+                        
+                        <!-- Volume buttons -->
+                        <div class="absolute left-[-14px] top-32 w-2 h-12 bg-gray-800 rounded-l-lg"></div>
+                        <div class="absolute left-[-14px] top-48 w-2 h-12 bg-gray-800 rounded-l-lg"></div>
+                        
+                        <!-- Power button -->
+                        <div class="absolute right-[-14px] top-40 w-2 h-16 bg-gray-800 rounded-r-lg"></div>
+                        
+                        <!-- Screen -->
+                        <div class="w-full h-full bg-white rounded-[2.5rem] overflow-hidden relative">
+                          <!-- Close button -->
+                          <button id="close-modal-btn" class="absolute top-3 right-3 z-20 p-1.5 rounded-full bg-gray-800/70 hover:bg-gray-700 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                          </button>
+                          
+                          <!-- Loading spinner -->
+                          <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-white">
+                            <div class="w-10 h-10 border-4 border-gray-200 border-t-green-600 rounded-full animate-spin"></div>
+                          </div>
+                          
+                          <!-- Iframe to load the website -->
+                          <iframe 
+                            src="https://payzoll-pay.onrender.com/" 
+                            class="w-full h-full border-0"
+                            title="PayZoll App"
+                            onload="document.getElementById('loading-spinner').style.display='none'"
+                          ></iframe>
+                        </div>
+                        
+                        <!-- Home indicator -->
+                        <div class="absolute bottom-1.5 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gray-800 rounded-full"></div>
+                      </div>
+                    </div>
+                  `;
+                  
+                  document.body.appendChild(modalDiv);
+                  
+                  // Add event listener to close button
+                  const closeBtn = modalDiv.querySelector('#close-modal-btn');
+                  if (closeBtn) {
+                    closeBtn.addEventListener('click', () => {
+                      document.body.removeChild(modalDiv);
+                    });
+                  }
+                  
+                  // Close on backdrop click
+                  modalDiv.addEventListener('click', (e) => {
+                    if (e.target === modalDiv) {
+                      document.body.removeChild(modalDiv);
+                    }
+                  });
+                }}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md transition-all duration-300 font-medium"
+              >
+                Launch App
+              </button>
+            </>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden text-white p-2"
           >
-            {item.name}
-          </a>
-        ))}
-      </nav>
-
-      {/* Right Section - Buttons */}
-      <div className="hidden md:flex items-center space-x-4">
-        <a
-          href="#contact"
-          className="text-gray-300 hover:text-green-400 transition-colors duration-300"
-        >
-          Contact us
-        </a>
-        <button className="text-gray-300 hover:text-white px-4 py-2 rounded-md border border-gray-600 hover:border-gray-500 transition-all duration-300">
-          Sign In
-        </button>
-        <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md transition-all duration-300 font-medium">
-          Get Started
-        </button>
-      </div>
-
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
-        className="md:hidden text-white p-2"
-      >
-        {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
-    </div>
-
-    {/* Mobile Menu */}
-    {isMenuOpen && (
-      <div className="md:hidden bg-gray-900 bg-opacity-98 backdrop-blur-md border-t border-gray-800">
-        <div className="px-6 py-4 space-y-3">
-          {navItems.map((item) => (
-            <a
-              key={item.name}
-              href={item.href}
-              className="block text-gray-300 hover:text-green-400 py-2 transition-colors duration-300"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {item.name}
-            </a>
-          ))}
-          <div className="border-t border-gray-800 pt-4 space-y-3">
-            <a
-              href="#contact"
-              className="block text-gray-300 hover:text-green-400 py-2 transition-colors duration-300"
-            >
-              Contact us
-            </a>
-            <button className="w-full text-left text-gray-300 hover:text-white px-4 py-2 rounded-md border border-gray-600 transition-all duration-300">
-              Sign In
-            </button>
-            <button className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-all duration-300 font-medium">
-              Get Started
-            </button>
-          </div>
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
-      </div>
-    )}
-  </header>
-  );
-};
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden bg-gray-900 bg-opacity-98 backdrop-blur-md border-t border-gray-800">
+            <div className="px-6 py-4 space-y-3">
+              <div className="border-t border-gray-800 pt-4 space-y-3">
+                <a
+                  href="#contact"
+                  className="block text-gray-300 hover:text-green-400 py-2 transition-colors duration-300"
+                >
+                  Contact us
+                </a>
+                <button className="w-full text-left text-gray-300 hover:text-white px-4 py-2 rounded-md border border-gray-600 transition-all duration-300">
+                  Sign In
+                </button>
+                <button className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-all duration-300 font-medium">
+                  Get Started
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </header>
+    );
+  };
 
 
   // Phone Mockup Component with Dynamic Content
@@ -268,7 +309,7 @@ const Navigation = () => {
             </p>
           </div>
         </div>
-        
+
         <div ref={ref} className="relative max-w-7xl mx-auto pb-20">
           {data.map((item, index) => (
             <div
@@ -306,7 +347,7 @@ const Navigation = () => {
               </motion.div>
             </div>
           ))}
-          
+
           {/* Animated Line */}
           <div
             style={{ height: height + "px" }}
@@ -329,7 +370,7 @@ const Navigation = () => {
   const howItWorksSteps: StepEntry[] = [
     {
       title: "Sign in with LINE",
-      description: "Connect your LINE account securely to access ZenCrypto's payment features.",
+      description: "Connect your LINE account securely to access PayZoll's payment features.",
       phoneContent: (
         <div className="flex-1 flex flex-col justify-center items-center px-6">
           <div className="bg-white rounded-3xl p-8 w-full text-center">
@@ -338,7 +379,7 @@ const Navigation = () => {
                 <span className="text-white font-bold text-sm">LINE</span>
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Welcome to ZenCrypto</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Welcome to PayZoll</h3>
             <p className="text-gray-600 text-sm mb-6">Sign in with your LINE account to get started</p>
             <button className="w-full bg-green-500 text-white py-3 rounded-xl font-medium hover:bg-green-600 transition-colors">
               Continue with LINE
@@ -356,7 +397,7 @@ const Navigation = () => {
             <h3 className="text-white font-semibold">Add Friend</h3>
             <QrCode className="w-6 h-6 text-white/70" />
           </div>
-          
+
           <div className="bg-white rounded-2xl p-4 mb-4">
             <div className="flex items-center gap-3 mb-4">
               <Scan className="w-5 h-5 text-green-600" />
@@ -520,16 +561,16 @@ const Navigation = () => {
 
           <div className="bg-white rounded-2xl p-4 mb-4">
             <h4 className="text-gray-900 font-medium mb-4">Recipients (3)</h4>
-            
+
             <div className="space-y-3">
               <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-blue-400 rounded-full"></div>
                   <span className="text-gray-900 text-sm">Sarah Kim</span>
                 </div>
-                <input 
-                  className="w-20 text-right text-sm bg-white border rounded px-2 py-1" 
-                  placeholder="$0.00" 
+                <input
+                  className="w-20 text-right text-sm bg-white border rounded px-2 py-1"
+                  placeholder="$0.00"
                   defaultValue="$50.00"
                 />
               </div>
@@ -539,8 +580,8 @@ const Navigation = () => {
                   <div className="w-8 h-8 bg-purple-400 rounded-full"></div>
                   <span className="text-gray-900 text-sm">Mike Chen</span>
                 </div>
-                <input 
-                  className="w-20 text-right text-sm bg-white border rounded px-2 py-1" 
+                <input
+                  className="w-20 text-right text-sm bg-white border rounded px-2 py-1"
                   placeholder="$0.00"
                   defaultValue="$25.00"
                 />
@@ -551,8 +592,8 @@ const Navigation = () => {
                   <div className="w-8 h-8 bg-orange-400 rounded-full"></div>
                   <span className="text-gray-900 text-sm">Alex Lee</span>
                 </div>
-                <input 
-                  className="w-20 text-right text-sm bg-white border rounded px-2 py-1" 
+                <input
+                  className="w-20 text-right text-sm bg-white border rounded px-2 py-1"
                   placeholder="$0.00"
                   defaultValue="$75.00"
                 />
@@ -591,7 +632,7 @@ const Navigation = () => {
                 </div>
                 <span className="text-gray-900 font-medium">$50.00</span>
               </div>
-              
+
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 bg-purple-400 rounded-full"></div>
@@ -636,7 +677,7 @@ const Navigation = () => {
 
           <div className="bg-white rounded-3xl p-6 space-y-4">
             <h4 className="text-gray-900 font-medium mb-4">Transaction Status</h4>
-            
+
             <div className="space-y-3 text-sm">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
@@ -648,7 +689,7 @@ const Navigation = () => {
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 </div>
               </div>
-              
+
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 bg-purple-400 rounded-full"></div>
@@ -702,8 +743,8 @@ const Navigation = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm text-gray-600 mb-2">Total Amount</label>
-                <input 
-                  className="w-full text-center text-2xl font-light border-b-2 border-green-200 focus:border-green-500 outline-none py-2" 
+                <input
+                  className="w-full text-center text-2xl font-light border-b-2 border-green-200 focus:border-green-500 outline-none py-2"
                   placeholder="$0.00"
                   defaultValue="$120.00"
                 />
@@ -711,8 +752,8 @@ const Navigation = () => {
 
               <div>
                 <label className="block text-sm text-gray-600 mb-2">Description (Optional)</label>
-                <input 
-                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:border-green-500 outline-none" 
+                <input
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:border-green-500 outline-none"
                   placeholder="e.g., Team dinner at Italian restaurant"
                   defaultValue="Team dinner at Marco's"
                 />
@@ -819,7 +860,7 @@ const Navigation = () => {
 
               <div className="space-y-2">
                 <p className="text-gray-600 text-sm">Payment requests:</p>
-                
+
                 <div className="flex items-center justify-between p-2">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 bg-blue-400 rounded-full"></div>
@@ -956,7 +997,7 @@ const Navigation = () => {
           <h1 className="text-white text-4xl font-light mb-6">
             $ 12,249.<span className="text-white/50">00</span>
           </h1>
-          
+
           <div className="flex gap-4 mb-8">
             <button className="flex items-center gap-2 px-4 py-2 bg-white/20 rounded-full text-white text-sm">
               <Send className="w-4 h-4" />
@@ -1012,25 +1053,6 @@ const Navigation = () => {
     </div>
   );
 
-  // Trust Badges Section with Green Theme
-  const TrustBadges = () => (
-    <section className="bg-green-50 py-8">
-      <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row justify-center items-center gap-8 text-gray-600">
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-green-600" />
-            <span className="font-medium">Backed by Kaia</span>
-          </div>
-          <div className="hidden md:block w-px h-6 bg-green-300"></div>
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-green-600" />
-            <span className="font-medium">24/7 Support</span>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-
   // Crypto Cards Section with Green Theme
   const CryptoCardsSection = () => {
     const [, setHoveredCard] = useState<string | null>(null);
@@ -1060,15 +1082,15 @@ const Navigation = () => {
                 onMouseLeave={() => setHoveredCard(null)}
                 whileHover={{ scale: 1.05, rotateY: 5 }}
                 initial={{ opacity: 0, rotateX: 45, rotateY: -20, scale: 0.8 }}
-                whileInView={{ 
-                  opacity: 1, 
-                  rotateX: 0, 
-                  rotateY: 0, 
-                  scale: 1 
+                whileInView={{
+                  opacity: 1,
+                  rotateX: 0,
+                  rotateY: 0,
+                  scale: 1
                 }}
                 viewport={{ once: true, amount: 0.3 }}
-                transition={{ 
-                  duration: 0.8, 
+                transition={{
+                  duration: 0.8,
                   delay: 0.2,
                   type: "spring",
                   stiffness: 100
@@ -1111,15 +1133,15 @@ const Navigation = () => {
                 onMouseLeave={() => setHoveredCard(null)}
                 whileHover={{ scale: 1.05, rotateY: -5 }}
                 initial={{ opacity: 0, rotateX: 45, rotateY: 20, scale: 0.8 }}
-                whileInView={{ 
-                  opacity: 1, 
-                  rotateX: 0, 
-                  rotateY: 0, 
-                  scale: 1 
+                whileInView={{
+                  opacity: 1,
+                  rotateX: 0,
+                  rotateY: 0,
+                  scale: 1
                 }}
                 viewport={{ once: true, amount: 0.3 }}
-                transition={{ 
-                  duration: 0.8, 
+                transition={{
+                  duration: 0.8,
                   delay: 0.4,
                   type: "spring",
                   stiffness: 100
@@ -1173,7 +1195,7 @@ const Navigation = () => {
                 One tap to pay friends, split costs, and batch send in{" "}
                 <span className="relative">
                   <span className="text-green-400">KAIA, USDT, and other top tokens.</span>
-                  <motion.div 
+                  <motion.div
                     className="absolute bottom-2 left-0 right-0 h-1 bg-green-400"
                     initial={{ scaleX: 0 }}
                     whileInView={{ scaleX: 1 }}
@@ -1183,7 +1205,7 @@ const Navigation = () => {
                   />
                 </span>
               </motion.h2>
-              
+
               <motion.p
                 className="text-xl text-gray-300 mb-8 leading-relaxed"
                 initial={{ opacity: 0, y: 20 }}
@@ -1199,8 +1221,8 @@ const Navigation = () => {
                 initial={{ opacity: 0, scale: 0.8 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true, amount: 0.3 }}
-                transition={{ 
-                  duration: 0.6, 
+                transition={{
+                  duration: 0.6,
                   delay: 1.4,
                   type: "spring",
                   stiffness: 200
@@ -1220,11 +1242,11 @@ const Navigation = () => {
   return (
     <div className="min-h-screen">
       <Navigation />
-      
+
       {/* Hero Section - Updated with Green Theme */}
       <section className="bg-white pt-40 py-20 overflow-hidden">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-3 items-center max-w-7xl mx-auto">
             {/* Content */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
@@ -1232,24 +1254,24 @@ const Navigation = () => {
               transition={{ duration: 0.8 }}
               className="space-y-8"
             >
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 leading-tight">
-                Pay friends with crypto. <AnimatedText
-      text="Instantly."
-      underlinePath="M 0,10 Q 75,0 150,10 Q 225,20 300,10"
-      underlineHoverPath="M 0,10 Q 75,20 150,10 Q 225,0 300,10"
-      underlineDuration={1.5}
-    />
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
+                Pay friends, earn rewards, invest and borrow with crypto. <AnimatedText
+                  text="Instantly."
+                  underlinePath="M 0,10 Q 75,0 150,10 Q 225,20 300,10"
+                  underlineHoverPath="M 0,10 Q 75,20 150,10 Q 225,0 300,10"
+                  underlineDuration={1.5}
+                />
               </h1>
-              
+
               <p className="text-xl text-gray-600 leading-relaxed max-w-lg">
-                Send, split, and scan—secured by Kaia, integrated with LINE.
+                Send, split, earn and borrow, scan—secured by Kaia, integrated with LINE.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <button className="flex items-center justify-center gap-3 px-8 py-4 bg-green-600 text-white rounded-2xl font-medium hover:bg-green-700 transition-colors shadow-lg">
                   Get Started
                 </button>
-                
+
                 <button className="flex items-center justify-center gap-3 px-8 py-4 bg-white text-gray-900 rounded-2xl font-medium border-2 border-green-200 hover:border-green-300 transition-colors" onClick={() => { const el = document.getElementById('how-it-works'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }}>
                   <Play className="w-6 h-6" />
                   Learn More
@@ -1269,9 +1291,6 @@ const Navigation = () => {
           </div>
         </div>
       </section>
-
-      {/* Trust Badges */}
-      <TrustBadges />
 
       {/* Features Section with TiltedScroll */}
       <section id="features" className="bg-white py-20">
@@ -1304,7 +1323,7 @@ const Navigation = () => {
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            <TiltedScroll 
+            <TiltedScroll
               items={[
                 { id: "1", text: "Non‑custodial wallet: You control your keys." },
                 { id: "2", text: "QR payments: Scan to send/receive." },
@@ -1323,8 +1342,8 @@ const Navigation = () => {
 
       {/* How it works */}
       <section id="how-it-works">
-        <StepTimeline 
-          data={howItWorksSteps} 
+        <StepTimeline
+          data={howItWorksSteps}
           title="How it works"
           subtitle="Four simple steps to start paying friends with crypto through LINE integration."
         />
@@ -1332,8 +1351,8 @@ const Navigation = () => {
 
       {/* Bulk Payments Section */}
       <section id="bulk-payments">
-        <StepTimeline 
-          data={bulkPaymentSteps} 
+        <StepTimeline
+          data={bulkPaymentSteps}
           title="Bulk Payments Made Easy"
           subtitle="Send crypto to multiple recipients at once with our streamlined bulk payment feature."
         />
@@ -1341,8 +1360,8 @@ const Navigation = () => {
 
       {/* Split Bills Section */}
       <section id="split-bills">
-        <StepTimeline 
-          data={splitBillSteps} 
+        <StepTimeline
+          data={splitBillSteps}
           title="Split Bills Effortlessly"
           subtitle="Divide group expenses and request payments from friends with automatic calculations."
         />
@@ -1401,7 +1420,7 @@ const Navigation = () => {
                   answer: "Yes—non‑custodial + encryption."
                 },
                 {
-                  question: "Which coins are supported?", 
+                  question: "Which coins are supported?",
                   answer: "BTC, ETH, stablecoins, and more."
                 },
                 {
@@ -1448,7 +1467,7 @@ const Navigation = () => {
             </div>
           </motion.div>
         </div>
-        </section>
+      </section>
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-16">
@@ -1456,18 +1475,13 @@ const Navigation = () => {
           <div className="grid md:grid-cols-4 gap-8 max-w-6xl mx-auto">
             <div className="col-span-2">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center">
-                  <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  </div>
-                </div>
-                <span className="text-xl font-bold">ZenCrypto</span>
+                <span className="text-xl font-bold">PayZoll</span>
               </div>
               <p className="text-gray-400 mb-6">
                 The future of crypto payments, secured by Kaia and integrated with LINE.
               </p>
             </div>
-            
+
             <div>
               <h4 className="font-semibold mb-4">Legal</h4>
               <ul className="space-y-2 text-gray-400">
@@ -1476,7 +1490,7 @@ const Navigation = () => {
                 <li><a href="#" className="hover:text-white">Support</a></li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="font-semibold mb-4">Resources</h4>
               <ul className="space-y-2 text-gray-400">
@@ -1486,9 +1500,9 @@ const Navigation = () => {
               </ul>
             </div>
           </div>
-          
+
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 ZenCrypto. All rights reserved.</p>
+            <p>&copy; 2025 PayZoll. All rights reserved.</p>
           </div>
         </div>
       </footer>
