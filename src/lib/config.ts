@@ -12,16 +12,17 @@ export const CONFIG = {
   // Fee Delegation Service  
   FEE_DELEGATION_URL: 'https://fee-delegation-kairos.kaia.io',
   
-  // Contract Addresses (deployed contracts from latest deployment - 2025-09-20T19:17:20.180Z)
-  USDT_ADDRESS: '0xd55B72640f3e31910A688a2Dc81876F053115B09', // ✅ CORRECTED: Current faucet USDT address
-  BULK_PAYROLL_ADDRESS: '0x850Ee5aAA4e55668573D5Ce5f055c113Fe7bd0d4', // ✅ CORRECTED: Newly deployed BulkPayroll 
-  SPLIT_BILLING_ADDRESS: '0x6892D8358bD3EE04a35Ad5844181BDED05dcdf2f',
-  INVOICE_SERVICE_ADDRESS: '0xc70DfAf8d864125D37237fc7B034ACAE1f3397d9',
-  ENHANCED_LENDING_ADDRESS: '0xc754860D0064f0707F5c5c9de2f0930d580E7Db7', // Latest Enhanced Lending Protocol
+  // ✅ CLEAN DEPLOYED CONTRACTS - FROM KAIAPAY FOLDER (2025-09-21T12:22:29.155Z)
+  USDT_ADDRESS: '0x266E46b48884Ce37EB7eeD3Ba9cDee29D2a28799', // ✅ DummyUSDT - Fresh deployment
+  USDY_ADDRESS: '0x781ca828691238A37F7B02c2559548790B4BF7A8', // ✅ USDY - Real World Asset token
+  BULK_PAYROLL_ADDRESS: '0x5DA20Af4287289D1566E5253D72Eb0d59f2F0369', // ✅ BulkPayroll - Clean deployment
+  SPLIT_BILLING_ADDRESS: '0xB910c211d248AD3304604e6Fb170af4604e3880C', // ✅ SplitBilling - Clean deployment
+  INVOICE_SERVICE_ADDRESS: '0xc70DfAf8d864125D37237fc7B034ACAE1f3397d9', // ⚠️ NOT REDEPLOYED - May need update
+  ENHANCED_LENDING_ADDRESS: '0xc754860D0064f0707F5c5c9de2f0930d580E7Db7', // ⚠️ NOT REDEPLOYED - May need update
   
-  // LP Token Addresses (for Enhanced Lending Protocol - Latest deployment)
-  K_KAIA_ADDRESS: '0xf38b06fcf9e107EBb3AE2104D57CC3dF7279F64B', // kKAIA LP token - latest
-  K_USDT_ADDRESS: '0xB6369bfC61b27856A8DCA6bebE1a51766C767133', // kUSDT LP token - latest
+  // ✅ LP Token Addresses - Fresh deployment from kaiapay folder
+  K_KAIA_ADDRESS: '0x76EfB7119d4606BA051d9cA169E5678e86587D1C', // ✅ kKAIA LP token - Clean deployment
+  K_USDT_ADDRESS: '0xe7985C0f1cFF100272895D1bedFB9ddC191a9291', // ✅ kUSDT LP token - Clean deployment
   
   // LINE Configuration (from .env)
   LIFF_ID: '2008110181-oen1dWyd',
@@ -123,7 +124,51 @@ export interface SplitPayment {
   updatedAt?: Date;
 }
 
-// USDT Contract Methods (from USDT.json ABI)
+// ✅ VERIFIED METHOD IDs - FROM CLEAN DEPLOYMENT
+export const METHOD_IDS = {
+  // DummyUSDT (Faucet USDT)
+  USDT: {
+    FAUCET: '0xde5f72fd',           // faucet()
+    TRANSFER: '0xa9059cbb',         // transfer(address,uint256)
+    APPROVE: '0x095ea7b3',          // approve(address,uint256)
+    BALANCE_OF: '0x70a08231',       // balanceOf(address)
+    ALLOWANCE: '0xdd62ed3e'         // allowance(address,address)
+  },
+  
+  // USDY (Real World Asset)
+  USDY: {
+    FAUCET: '0xfbbfb782',           // claimFromFaucet()
+    TRANSFER: '0xa9059cbb',         // transfer(address,uint256)
+    APPROVE: '0x095ea7b3',          // approve(address,uint256)
+    BALANCE_OF: '0x70a08231',       // balanceOf(address)
+    ALLOWANCE: '0xdd62ed3e'         // allowance(address,address)
+  },
+  
+  // BulkPayroll
+  BULK_PAYROLL: {
+    BULK_TRANSFER: '0xe886dade',    // bulkTransfer(address,address[],uint256[])
+    CLAIM_FAILED: '0x09ae54be',     // claimFailedTransfer(address)
+    GET_FAILED_AMOUNT: '0xe65c31c4' // getFailedAmount(address,address)
+  },
+  
+  // SplitBilling
+  SPLIT_BILLING: {
+    CREATE_SPLIT: '0x68fcb6fd',     // createSplit(address,address[],uint256[],address,uint256,string)
+    PAY_SHARE: '0xc97320a7',        // payShare(uint256)
+    GET_SPLIT_DETAILS: '0xf6b30c60', // getSplitDetails(uint256)
+    CANCEL_SPLIT: '0xb3a0ab98'      // cancelSplit(uint256)
+  },
+  
+  // LPToken
+  LP_TOKEN: {
+    MINT: '0x40c10f19',             // mint(address,uint256)
+    BURN: '0x9dc29fac',             // burn(address,uint256)
+    BALANCE_OF: '0x70a08231',       // balanceOf(address)
+    TRANSFER: '0xa9059cbb'          // transfer(address,uint256)
+  }
+} as const;
+
+// LEGACY USDT Contract Methods (for backward compatibility)
 export const USDT_METHODS = {
   BALANCE_OF: 'balanceOf',
   TRANSFER: 'transfer', 

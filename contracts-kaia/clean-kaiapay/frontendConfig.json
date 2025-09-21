@@ -1,0 +1,52 @@
+{
+  "USDT_ADDRESS": "0x266E46b48884Ce37EB7eeD3Ba9cDee29D2a28799",
+  "USDY_ADDRESS": "0x781ca828691238A37F7B02c2559548790B4BF7A8",
+  "BULK_PAYROLL_ADDRESS": "0x5DA20Af4287289D1566E5253D72Eb0d59f2F0369",
+  "SPLIT_BILLING_ADDRESS": "0xB910c211d248AD3304604e6Fb170af4604e3880C",
+  "K_USDT_ADDRESS": "0xe7985C0f1cFF100272895D1bedFB9ddC191a9291",
+  "K_KAIA_ADDRESS": "0x76EfB7119d4606BA051d9cA169E5678e86587D1C",
+  "METHOD_IDS": {
+    "DummyUSDT": {
+      "faucet": "0xde5f72fd",
+      "transfer": "0xa9059cbb",
+      "approve": "0x095ea7b3",
+      "balanceOf": "0x70a08231",
+      "allowance": "0xdd62ed3e"
+    },
+    "USDY": {
+      "claimFromFaucet": "0xfbbfb782",
+      "transfer": "0xa9059cbb",
+      "approve": "0x095ea7b3",
+      "balanceOf": "0x70a08231",
+      "allowance": "0xdd62ed3e"
+    },
+    "BulkPayroll": {
+      "bulkTransfer": "0xe886dade",
+      "claimFailedTransfer": "0x09ae54be",
+      "getFailedAmount": "0xe65c31c4"
+    },
+    "SplitBilling": {
+      "createSplit": "0x68fcb6fd",
+      "payShare": "0xc97320a7",
+      "getSplitDetails": "0xf6b30c60",
+      "cancelSplit": "0xb3a0ab98"
+    },
+    "LPToken": {
+      "mint": "0x40c10f19",
+      "burn": "0x9dc29fac",
+      "balanceOf": "0x70a08231",
+      "transfer": "0xa9059cbb"
+    }
+  },
+  "FUNCTION_SIGNATURES": {
+    "FAUCET": "faucet()",
+    "USDY_FAUCET": "claimFromFaucet()",
+    "ERC20_TRANSFER": "transfer(address,uint256)",
+    "ERC20_APPROVE": "approve(address,uint256)",
+    "ERC20_BALANCE_OF": "balanceOf(address)",
+    "BULK_TRANSFER": "bulkTransfer(address,address[],uint256[])",
+    "CLAIM_FAILED": "claimFailedTransfer(address)",
+    "CREATE_SPLIT": "createSplit(address,address[],uint256[],address,uint256,string)",
+    "PAY_SHARE": "payShare(uint256)"
+  }
+}

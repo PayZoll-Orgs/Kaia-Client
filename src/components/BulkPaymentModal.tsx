@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUSDTBalance } from '@/lib/token-service';
-import { CONFIG, API_ENDPOINTS } from '@/lib/config';
+import { CONFIG, API_ENDPOINTS, METHOD_IDS } from '@/lib/config';
 import { 
   XMarkIcon, 
   UserIcon, 
@@ -270,8 +270,8 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
       console.log('🔓 Approving USDT spending for BulkPayroll contract...');
       const totalAmountWei = amounts.reduce((sum, amount) => sum + BigInt(amount), BigInt(0));
       
-      // ERC20 approve function selector: 0x095ea7b3
-      const approveSelector = '095ea7b3';
+      // ✅ CORRECTED: ERC20 approve function selector from clean deployment
+      const approveSelector = METHOD_IDS.USDT.APPROVE.slice(2); // Remove 0x prefix
       const paddedSpenderAddress = BULK_PAYROLL_ADDRESS.slice(2).padStart(64, '0');
       const paddedAmount = totalAmountWei.toString(16).padStart(64, '0');
       const approveData = '0x' + approveSelector + paddedSpenderAddress + paddedAmount;
