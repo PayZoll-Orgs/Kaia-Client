@@ -15,7 +15,7 @@ async function main() {
     console.log("============================================================");
 
     // Contract addresses
-    const USDT_ADDRESS = ethers.getAddress("0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193");
+    const USDT_ADDRESS = ethers.getAddress("0xd55B72640f3e31910A688a2Dc81876F053115B09");
     const INVOICE_SERVICE_ADDRESS = ethers.getAddress("0xc70DfAf8d864125D37237fc7B034ACAE1f3397d9");
 
     const [deployer] = await ethers.getSigners();

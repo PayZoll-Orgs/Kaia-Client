@@ -48,7 +48,7 @@ export const CONTRACT_ADDRESSES: Record<string, ContractAddresses> = {
     enhancedLending: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
     
     // Mock token contracts for local testing
-    usdt: '0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193',
+    usdt: '0xd55B72640f3e31910A688a2Dc81876F053115B09',
     kaia: '0x0000000000000000000000000000000000000001',
     usdy: '0x0000000000000000000000000000000000000003',
     

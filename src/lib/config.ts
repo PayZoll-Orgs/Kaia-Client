@@ -12,16 +12,16 @@ export const CONFIG = {
   // Fee Delegation Service  
   FEE_DELEGATION_URL: 'https://fee-delegation-kairos.kaia.io',
   
-  // Contract Addresses (deployed contracts from artifacts)
+  // Contract Addresses (deployed contracts from latest deployment - 2025-09-20T19:17:20.180Z)
   USDT_ADDRESS: '0xd55B72640f3e31910A688a2Dc81876F053115B09',
   BULK_PAYROLL_ADDRESS: '0xE9bD986514a6d35B1B73BeA6F19804D3c7aed284', 
   SPLIT_BILLING_ADDRESS: '0x6892D8358bD3EE04a35Ad5844181BDED05dcdf2f',
   INVOICE_SERVICE_ADDRESS: '0xc70DfAf8d864125D37237fc7B034ACAE1f3397d9',
-  ENHANCED_LENDING_ADDRESS: '0x5FbDB2315678afecb367f032d93F642f64180aa3', // Placeholder - update when deployed
+  ENHANCED_LENDING_ADDRESS: '0xc754860D0064f0707F5c5c9de2f0930d580E7Db7', // Latest Enhanced Lending Protocol
   
-  // LP Token Addresses (for Enhanced Lending Protocol)
-  K_KAIA_ADDRESS: '0x0000000000000000000000000000000000000004', // kKAIA LP token - placeholder
-  K_USDT_ADDRESS: '0x0000000000000000000000000000000000000005', // kUSDT LP token - placeholder
+  // LP Token Addresses (for Enhanced Lending Protocol - Latest deployment)
+  K_KAIA_ADDRESS: '0xf38b06fcf9e107EBb3AE2104D57CC3dF7279F64B', // kKAIA LP token - latest
+  K_USDT_ADDRESS: '0xB6369bfC61b27856A8DCA6bebE1a51766C767133', // kUSDT LP token - latest
   
   // LINE Configuration (from .env)
   LIFF_ID: '2008110181-oen1dWyd',

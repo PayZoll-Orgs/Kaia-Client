@@ -11,7 +11,7 @@ async function main() {
     // For simplicity, we'll use mock addresses for tokens that should already be deployed
     // In a real deployment, these would be the actual deployed token addresses
     const MOCK_KAIA = "0x0000000000000000000000000000000000000001"; // Mock KAIA address
-    const MOCK_USDT = "0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193"; // Use existing USDT from manual testing guide
+    const MOCK_USDT = "0xd55B72640f3e31910A688a2Dc81876F053115B09"; // Use existing USDT from manual testing guide
     const MOCK_USDY = "0x0000000000000000000000000000000000000003"; // Mock USDY address
     const MOCK_kKAIA = "0x0000000000000000000000000000000000000004"; // Mock kKAIA LP token
     const MOCK_kUSDT = "0x0000000000000000000000000000000000000005"; // Mock kUSDT LP token

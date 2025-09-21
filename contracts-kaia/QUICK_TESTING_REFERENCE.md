@@ -2,7 +2,7 @@
 
 ## 🎯 **ESSENTIAL CONTRACT ADDRESSES**
 ```
-USDT Token:     0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193
+USDT Token:     0xd55B72640f3e31910A688a2Dc81876F053115B09
 BulkPayroll:    0xE9bD986514a6d35B1B73BeA6F19804D3c7aed284  
 InvoiceService: 0xc70DfAf8d864125D37237fc7B034ACAE1f3397d9
 SplitBilling:   0x6892D8358bD3EE04a35Ad5844181BDED05dcdf2f
@@ -13,7 +13,7 @@ Your Address:   0xEEFfe4C8B285A3f55EEC9fB50C9c96F69f9B453e
 
 ### **1. USDT TOKEN (Start Here)**
 ```
-Contract: 0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193
+Contract: 0xd55B72640f3e31910A688a2Dc81876F053115B09
 
 🔸 faucet() → Get free TUSDT
 🔸 mint(0xEEFfe4C8B285A3f55EEC9fB50C9c96F69f9B453e, 500000000000000000000) → Mint 500 TUSDT
@@ -50,7 +50,7 @@ Contract: 0xc70DfAf8d864125D37237fc7B034ACAE1f3397d9
 ### **4. SPLIT BILLING**
 ```
 First: Approve USDT for SplitBilling
-Contract: 0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193
+Contract: 0xd55B72640f3e31910A688a2Dc81876F053115B09
 🔸 approve(0x6892D8358bD3EE04a35Ad5844181BDED05dcdf2f, 500000000000000000000)
 
 Then: Contract: 0x6892D8358bD3EE04a35Ad5844181BDED05dcdf2f
@@ -91,6 +91,6 @@ Then: Contract: 0x6892D8358bD3EE04a35Ad5844181BDED05dcdf2f
 - **Gas estimation failed** → Increase gas limit
 
 ## 🔗 **KaiaScan Links**
-- Token: https://kairos.kaiascope.com/token/0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193
+- Token: https://kairos.kaiascope.com/token/0xd55B72640f3e31910A688a2Dc81876F053115B09
 - Explorer: https://kairos.kaiascope.com
 - Your Address: https://kairos.kaiascope.com/address/0xEEFfe4C8B285A3f55EEC9fB50C9c96F69f9B453e

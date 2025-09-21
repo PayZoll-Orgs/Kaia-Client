@@ -15,7 +15,7 @@
 - **TOTAL PROCESSED:** ~5.3M TUSDT
 
 ## 🔗 Contract Addresses
-- **USDT (MyDummyTokenWithFaucet):** `0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193`
+- **USDT (MyDummyTokenWithFaucet):** `0xd55B72640f3e31910A688a2Dc81876F053115B09`
 - **BulkPayroll:** `0xE9bD986514a6d35B1B73BeA6F19804D3c7aed284`
 - **SplitBilling:** `0x6892D8358bD3EE04a35Ad5844181BDED05dcdf2f`
 
@@ -95,7 +95,7 @@
 
 All transactions are publicly verifiable on Kaia testnet:
 - **Base Explorer:** https://kairos.kaiascope.com
-- **USDT Contract:** https://kairos.kaiascope.com/account/0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193
+- **USDT Contract:** https://kairos.kaiascope.com/account/0xd55B72640f3e31910A688a2Dc81876F053115B09
 - **BulkPayroll Contract:** https://kairos.kaiascope.com/account/0xE9bD986514a6d35B1B73BeA6F19804D3c7aed284
 - **SplitBilling Contract:** https://kairos.kaiascope.com/account/0x6892D8358bD3EE04a35Ad5844181BDED05dcdf2f
 

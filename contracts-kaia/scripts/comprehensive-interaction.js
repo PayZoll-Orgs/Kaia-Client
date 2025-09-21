@@ -8,7 +8,7 @@ const fs = require('fs');
  * and demonstrate every function to verify everything works on KaiaScan.
  * 
  * Contract Addresses (Replace with your deployed addresses):
- * - USDT: 0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193
+ * - USDT: 0xd55B72640f3e31910A688a2Dc81876F053115B09
  * - BulkPayroll: 0xE9bD986514a6d35B1B73BeA6F19804D3c7aed284
  * - InvoiceService: 0xc70DfAf8d864125D37237fc7B034ACAE1f3397d9
  * - SplitBilling: 0x6892D8358bD3EE04a35Ad5844181BDED05dcdf2f
@@ -23,7 +23,7 @@ async function main() {
 
     // Contract addresses (from deployment)
     const CONTRACT_ADDRESSES = {
-        USDT: "0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193",
+        USDT: "0xd55B72640f3e31910A688a2Dc81876F053115B09",
         BulkPayroll: "0xE9bD986514a6d35B1B73BeA6F19804D3c7aed284", 
         InvoiceService: "0xc70DfAf8d864125D37237fc7B034ACAE1f3397d9",
         SplitBilling: "0x6892D8358bD3EE04a35Ad5844181BDED05dcdf2f"

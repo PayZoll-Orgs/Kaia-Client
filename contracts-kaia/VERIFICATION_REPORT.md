@@ -8,7 +8,7 @@ All KaiaPay contracts have been successfully deployed and tested on Kaia Testnet
 
 | Contract | Address | Status |
 |----------|---------|--------|
-| **USDT Token** | `0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193` | ✅ Live & Verified |
+| **USDT Token** | `0xd55B72640f3e31910A688a2Dc81876F053115B09` | ✅ Live & Verified |
 | **BulkPayroll** | `0xE9bD986514a6d35B1B73BeA6F19804D3c7aed284` | ✅ Live & Verified |
 | **InvoiceService** | `0xc70DfAf8d864125D37237fc7B034ACAE1f3397d9` | ✅ Live & Verified |
 | **SplitBilling** | `0x6892D8358bD3EE04a35Ad5844181BDED05dcdf2f` | ✅ Live & Verified |
@@ -24,7 +24,7 @@ You can search for any of the above contract addresses or transaction hashes on 
 
 ### 1️⃣ USDT TOKEN - All Functions Working ✅
 
-**Contract**: `0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193`
+**Contract**: `0xd55B72640f3e31910A688a2Dc81876F053115B09`
 
 | Function | Status | Transaction Hash | KaiaScan Link |
 |----------|--------|------------------|---------------|

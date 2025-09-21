@@ -10,7 +10,7 @@ This guide provides step-by-step manual testing instructions with exact inputs t
 
 | Contract | Address | KaiaScan Link |
 |----------|---------|---------------|
-| **USDT Token** | `0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193` | [View Contract](https://kairos.kaiascope.com/address/0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193) |
+| **USDT Token** | `0xd55B72640f3e31910A688a2Dc81876F053115B09` | [View Contract](https://kairos.kaiascope.com/address/0xd55B72640f3e31910A688a2Dc81876F053115B09) |
 | **BulkPayroll** | `0xE9bD986514a6d35B1B73BeA6F19804D3c7aed284` | [View Contract](https://kairos.kaiascope.com/address/0xE9bD986514a6d35B1B73BeA6F19804D3c7aed284) |
 | **InvoiceService** | `0xc70DfAf8d864125D37237fc7B034ACAE1f3397d9` | [View Contract](https://kairos.kaiascope.com/address/0xc70DfAf8d864125D37237fc7B034ACAE1f3397d9) |
 | **SplitBilling** | `0x6892D8358bD3EE04a35Ad5844181BDED05dcdf2f` | [View Contract](https://kairos.kaiascope.com/address/0x6892D8358bD3EE04a35Ad5844181BDED05dcdf2f) |
@@ -19,7 +19,7 @@ This guide provides step-by-step manual testing instructions with exact inputs t
 
 ## 🎯 **PHASE 1: USDT TOKEN TESTING**
 
-### **Contract**: `0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193`
+### **Contract**: `0xd55B72640f3e31910A688a2Dc81876F053115B09`
 
 #### **Step 1.1: Check Token Information**
 - **Function**: `name()` 
@@ -77,7 +77,7 @@ This guide provides step-by-step manual testing instructions with exact inputs t
 #### **Step 2.1: Check USDT Token Address**
 - **Function**: `usdtToken()`
 - **Input**: None
-- **Expected Output**: `0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193`
+- **Expected Output**: `0xd55B72640f3e31910A688a2Dc81876F053115B09`
 
 #### **Step 2.2: Check Max Recipients**
 - **Function**: `MAX_RECIPIENTS()`
@@ -110,7 +110,7 @@ This guide provides step-by-step manual testing instructions with exact inputs t
 
 #### **Step 3.1: Check Contract Configuration**
 - **Function**: `usdtToken()`
-- **Expected Output**: `0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193`
+- **Expected Output**: `0xd55B72640f3e31910A688a2Dc81876F053115B09`
 
 - **Function**: `platformFeeRate()`
 - **Expected Output**: `300` (3%)
@@ -167,14 +167,14 @@ This guide provides step-by-step manual testing instructions with exact inputs t
 
 #### **Step 4.1: Check USDT Token**
 - **Function**: `usdtToken()`
-- **Expected Output**: `0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193`
+- **Expected Output**: `0xd55B72640f3e31910A688a2Dc81876F053115B09`
 
 #### **Step 4.2: Check Max Recipients**
 - **Function**: `MAX_RECIPIENTS()`
 - **Expected Output**: `100`
 
 #### **Step 4.3: Approve USDT for Split Billing** ⭐
-- **Go to USDT Contract**: `0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193`
+- **Go to USDT Contract**: `0xd55B72640f3e31910A688a2Dc81876F053115B09`
 - **Function**: `approve(address,uint256)`
 - **Input 1**: `0x6892D8358bD3EE04a35Ad5844181BDED05dcdf2f`
 - **Input 2**: `500000000000000000000` (500 TUSDT in wei)
@@ -233,7 +233,7 @@ This guide provides step-by-step manual testing instructions with exact inputs t
 ## 📊 **PHASE 5: FINAL VERIFICATION**
 
 ### **Step 5.1: Check Final USDT Balances**
-- **Go to USDT Contract**: `0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193`
+- **Go to USDT Contract**: `0xd55B72640f3e31910A688a2Dc81876F053115B09`
 - **Function**: `balanceOf(address)`
 - **Check these addresses**:
   - Your address: `0xEEFfe4C8B285A3f55EEC9fB50C9c96F69f9B453e`

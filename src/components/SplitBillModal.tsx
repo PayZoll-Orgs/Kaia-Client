@@ -266,7 +266,7 @@ export default function SplitBillModal({ isOpen, onClose, onSuccess }: SplitBill
 
       // Contract addresses
       const SPLIT_BILLING_ADDRESS = '0x6892D8358bD3EE04a35Ad5844181BDED05dcdf2f';
-      const USDT_ADDRESS = '0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193';
+      const USDT_ADDRESS = '0xd55B72640f3e31910A688a2Dc81876F053115B09';
 
       // Prepare contract parameters
       const debtors = participants.map(p => p.address);

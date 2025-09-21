@@ -26,7 +26,7 @@ console.log('Incorrect Method ID:', incorrectMethodId);
 console.log('');
 
 // Test with sample data including token address
-const usdtAddress = '0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193';
+const usdtAddress = '0xd55B72640f3e31910A688a2Dc81876F053115B09';
 const testRecipients = [
   '0x1111111111111111111111111111111111111111',
   '0x2222222222222222222222222222222222222222'
@@ -47,7 +47,7 @@ console.log('Amounts:', testAmounts);
 console.log('\n🏗️ Contract Information');
 console.log('======================');
 console.log('BulkPayroll Address:', '0xE9bD986514a6d35B1B73BeA6F19804D3c7aed284');
-console.log('USDT Address:', '0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193');
+console.log('USDT Address:', '0xd55B72640f3e31910A688a2Dc81876F053115B09');
 console.log('Expected Gas Limit:', '~200,000');
 
 console.log('\n✅ Verification Complete');

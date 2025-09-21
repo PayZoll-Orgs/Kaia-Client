@@ -14,7 +14,7 @@ async function main() {
     console.log("Explorer: https://kairos.kaiascope.com");
     console.log("============================================================");
 
-    const USDT_ADDRESS = "0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193";
+    const USDT_ADDRESS = "0xd55B72640f3e31910A688a2Dc81876F053115B09";
     
     const [signer] = await ethers.getSigners();
     console.log(`\n📝 Testing Account: ${signer.address}`);
