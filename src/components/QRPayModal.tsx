@@ -379,7 +379,7 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <QrCodeIconOutline className="w-6 h-6 text-blue-600" />
+              <QrCodeIconOutline className="w-6 h-6 text-green-600" />
               QR Pay
             </h2>
             <button
@@ -400,7 +400,7 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
                 onClick={() => setMode('scan')}
                 className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
                   mode === 'scan'
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-green-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -410,7 +410,7 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
                 onClick={() => setMode('generate')}
                 className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
                   mode === 'generate'
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-green-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -427,8 +427,8 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
             <div className="space-y-4">
               {!showScanner ? (
                 <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <QrCodeIconOutline className="w-8 h-8 text-blue-600" />
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <QrCodeIconOutline className="w-8 h-8 text-green-600" />
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Scan Payment QR</h3>
                   <p className="text-gray-600 mb-6">
@@ -436,7 +436,7 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
                   </p>
                   <button
                     onClick={() => setShowScanner(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
                   >
                     Open Camera
                   </button>
@@ -553,7 +553,7 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
                   </button>
                   <button
                     onClick={shareQRData}
-                    className="flex items-center justify-center gap-1 py-2 px-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-xs font-medium text-blue-700"
+                    className="flex items-center justify-center gap-1 py-2 px-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors text-xs font-medium text-green-700"
                   >
                     <ShareIcon className="w-4 h-4" />
                     Share
@@ -567,7 +567,7 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
           {mode === 'pay' && scannedData && (
             <div className="space-y-6">
               {/* Recipient Info */}
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                 <div className="flex items-center gap-3">
                   {recipientUser ? (
                     // Show user avatar if we found them in our database
@@ -580,8 +580,8 @@ export default function QRPayModal({ isOpen, onClose, onSuccess }: QRPayModalPro
                     </div>
                   ) : (
                     // Show QR icon for unknown recipients
-                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                      <QrCodeIconOutline className="w-6 h-6 text-blue-600" />
+                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                      <QrCodeIconOutline className="w-6 h-6 text-green-600" />
                     </div>
                   )}
                   <div>

@@ -259,32 +259,6 @@ export default function PortfolioPage() {
           </div>
         </div>
 
-        {/* Account Action Buttons */}
-        <div className="flex justify-end px-4 mt-6 gap-3">
-          <button 
-            onClick={() => setShowSwitchAccount(true)}
-            className="border border-green-500 text-green-500 hover:bg-green-50 flex items-center gap-2 px-6 py-3 rounded-full transition-colors"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-            </svg>
-            <span className="text-lg font-normal">Switch Account</span>
-          </button>
-          <button className="bg-green-500 text-white flex items-center gap-2 px-6 py-3 rounded-full hover:bg-green-600 transition-colors">
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            <span className="text-lg font-normal">Add Account</span>
-          </button>
-        </div>
-
-        {/* Switch Account Popup */}
-        <SwitchAccountPopup
-          isOpen={showSwitchAccount}
-          onClose={() => setShowSwitchAccount(false)}
-          onSelectAccount={handleAccountSwitch}
-          accounts={accounts}
-        />
 
         {/* Profile Modal */}
         {showProfile && (
@@ -384,39 +358,6 @@ export default function PortfolioPage() {
         {wallet.isConnected && (
           <div className="mt-8 px-4">
             <WalletConnect showBalance={true} compact={false} />
-          </div>
-        )}
-
-        {/* Fee Delegation Status */}
-        {wallet.isConnected && (
-          <div className="mt-8 px-4">
-            <div className="bg-white rounded-2xl p-4 border border-gray-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                    <span className="text-purple-600 font-bold text-sm">⚡</span>
-                  </div>
-                  <div>
-                    <div className="text-gray-900 font-medium">Gasless Transactions</div>
-                    <div className="text-gray-500 text-sm">
-                      {feeDelegationAvailable === null 
-                        ? 'Checking...' 
-                        : feeDelegationAvailable 
-                          ? 'Available - No gas fees!' 
-                          : 'Unavailable - Regular gas fees apply'
-                      }
-                    </div>
-                  </div>
-                </div>
-                <div className={`w-3 h-3 rounded-full ${
-                  feeDelegationAvailable === null 
-                    ? 'bg-gray-300' 
-                    : feeDelegationAvailable 
-                      ? 'bg-green-500' 
-                      : 'bg-red-500'
-                }`}></div>
-              </div>
-            </div>
           </div>
         )}
       </header>

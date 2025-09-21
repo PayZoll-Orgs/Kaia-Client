@@ -478,7 +478,7 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
                 </button>
               )}
               <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <DocumentDuplicateIcon className="w-6 h-6 text-blue-600" />
+                <DocumentDuplicateIcon className="w-6 h-6 text-green-600" />
                 {currentStep === 'select' && 'Select Recipients'}
                 {currentStep === 'amounts' && 'Set Amounts'}
                 {currentStep === 'review' && 'Review Payment'}
@@ -502,7 +502,7 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
               <div key={step} className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   currentStep === step 
-                    ? 'bg-blue-600 text-white' 
+                    ? 'bg-green-600 text-white' 
                     : index < ['select', 'amounts', 'review'].indexOf(currentStep)
                       ? 'bg-green-600 text-white'
                       : 'bg-gray-200 text-gray-500'
@@ -558,7 +558,7 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
                           id={`user-${user._id}`}
                           checked={selectedUserIds.has(user._id)}
                           onChange={() => toggleUserSelection(user._id)}
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                         />
                         <label htmlFor={`user-${user._id}`} className="flex-1 cursor-pointer">
                           <div className="font-medium text-gray-900">{user.displayName}</div>
@@ -608,7 +608,7 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
               <button
                 onClick={handleNext}
                 disabled={recipients.length === 0}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next: Set Amounts
               </button>
@@ -653,17 +653,17 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
               </div>
 
               {/* Total Amount */}
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                 <div className="flex justify-between text-sm">
-                  <span className="font-medium text-blue-800">Total Amount:</span>
-                  <span className="font-bold text-blue-900">{totalAmount} USDT</span>
+                  <span className="font-medium text-green-800">Total Amount:</span>
+                  <span className="font-bold text-green-900">{totalAmount} USDT</span>
                 </div>
               </div>
 
               <button
                 onClick={handleNext}
                 disabled={recipients.some(r => !r.amount || parseFloat(r.amount) <= 0)}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next: Review Payment
               </button>

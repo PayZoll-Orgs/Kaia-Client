@@ -107,6 +107,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
   const [paymentSuccess, setPaymentSuccess] = useState<string | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [notifications] = useState(3); // Mock notification count
+  const [showNotifications, setShowNotifications] = useState(false);
 
   // Financial services modal states
   const [showEarnMoneyModal, setShowEarnMoneyModal] = useState(false);
@@ -438,7 +439,10 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
               }}
             />
           </button>
-          <button className="relative w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+          <button 
+            onClick={() => setShowNotifications(true)}
+            className="relative w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+          >
             <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
             </svg>
@@ -461,6 +465,33 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
           )}
         </div>
       </header>
+
+      {/* Notification Popup */}
+      {showNotifications && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-80 max-w-sm mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Notifications</h3>
+              <button
+                onClick={() => setShowNotifications(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="text-center py-8">
+              <div className="text-gray-400 mb-2">
+                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-5 5-5-5h5v-13" />
+                </svg>
+              </div>
+              <p className="text-gray-500 text-sm">No notifications</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Money Transfer Section */}
       <section className="px-6 mb-6">
@@ -1440,7 +1471,7 @@ function ReferEarnModal({ onClose }: { onClose: () => void }) {
               <button className="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 transition-colors">
                 Claim Earnings (15.00 USDT)
               </button>
-              <button className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors">
+              <button className="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 transition-colors">
                 Share on Social Media
               </button>
             </div>

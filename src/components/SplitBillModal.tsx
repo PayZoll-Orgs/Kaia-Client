@@ -453,7 +453,7 @@ export default function SplitBillModal({ isOpen, onClose, onSuccess }: SplitBill
               <div key={step} className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   currentStep === step 
-                    ? 'bg-blue-600 text-white' 
+                    ? 'bg-green-600 text-white' 
                     : index < ['create', 'participants', 'review'].indexOf(currentStep)
                       ? 'bg-green-600 text-white'
                       : 'bg-gray-200 text-gray-500'
@@ -539,7 +539,7 @@ export default function SplitBillModal({ isOpen, onClose, onSuccess }: SplitBill
               <button
                 onClick={handleNext}
                 disabled={!title.trim() || !totalAmount}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next: Add Participants
               </button>
@@ -559,7 +559,7 @@ export default function SplitBillModal({ isOpen, onClose, onSuccess }: SplitBill
                     onClick={() => setSplitMethod('equal')}
                     className={`flex-1 py-2 px-3 rounded-lg font-medium transition-colors ${
                       splitMethod === 'equal'
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-green-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
@@ -569,7 +569,7 @@ export default function SplitBillModal({ isOpen, onClose, onSuccess }: SplitBill
                     onClick={() => setSplitMethod('custom')}
                     className={`flex-1 py-2 px-3 rounded-lg font-medium transition-colors ${
                       splitMethod === 'custom'
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-green-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
@@ -585,7 +585,7 @@ export default function SplitBillModal({ isOpen, onClose, onSuccess }: SplitBill
                 <button
                   type="button"
                   onClick={() => setShowUserSelector(!showUserSelector)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
                 >
                   {showUserSelector ? 'Cancel' : 'Select Users'}
                 </button>
@@ -608,7 +608,7 @@ export default function SplitBillModal({ isOpen, onClose, onSuccess }: SplitBill
                               id={`user-${user._id}`}
                               checked={selectedUserIds.has(user._id)}
                               onChange={() => toggleUserSelection(user._id)}
-                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                             />
                             <label htmlFor={`user-${user._id}`} className="flex-1 cursor-pointer">
                               <div className="font-medium text-gray-900">{user.displayName}</div>
@@ -667,16 +667,16 @@ export default function SplitBillModal({ isOpen, onClose, onSuccess }: SplitBill
                     </div>
                   ))}
                   
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
                     <div className="flex justify-between text-sm">
-                      <span className="font-medium text-blue-800">Total:</span>
-                      <span className="font-bold text-blue-900">
+                      <span className="font-medium text-green-800">Total:</span>
+                      <span className="font-bold text-green-900">
                         {participants.reduce((sum, p) => sum + parseFloat(p.amount || '0'), 0).toFixed(2)} USDT
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-blue-700">Expected:</span>
-                      <span className="text-blue-800">{totalAmount} USDT</span>
+                      <span className="text-green-700">Expected:</span>
+                      <span className="text-green-800">{totalAmount} USDT</span>
                     </div>
                   </div>
                 </div>
@@ -685,7 +685,7 @@ export default function SplitBillModal({ isOpen, onClose, onSuccess }: SplitBill
               <button
                 onClick={handleNext}
                 disabled={participants.length === 0}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next: Review & Create
               </button>
