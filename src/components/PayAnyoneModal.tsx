@@ -323,7 +323,7 @@ export default function PayAnyoneModal({ isOpen, onClose, onSuccess }: PayAnyone
                   <button
                     key={user._id}
                     onClick={() => handleSelectUser(user)}
-                    className="w-full p-3 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left"
+                    className="w-full p-3 border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-left"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden">
@@ -355,7 +355,7 @@ export default function PayAnyoneModal({ isOpen, onClose, onSuccess }: PayAnyone
           {currentStep === 'amount' && selectedUser && (
             <div className="space-y-6">
               {/* Selected User */}
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-gray-100 overflow-hidden">
                     <img
@@ -404,7 +404,7 @@ export default function PayAnyoneModal({ isOpen, onClose, onSuccess }: PayAnyone
                   <button
                     key={quickAmount}
                     onClick={() => setAmount(quickAmount)}
-                    className="flex-1 py-2 px-3 border border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-sm font-medium"
+                    className="flex-1 py-2 px-3 border border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors text-sm font-medium"
                   >
                     {quickAmount} USDT
                   </button>
@@ -415,7 +415,7 @@ export default function PayAnyoneModal({ isOpen, onClose, onSuccess }: PayAnyone
               <button
                 onClick={handleConfirmPayment}
                 disabled={!amount || parseFloat(amount) <= 0}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue to Confirmation
               </button>

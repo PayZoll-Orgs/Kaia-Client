@@ -357,24 +357,11 @@ export default function WalletConnect({
             </div>
           )}
 
-          {/* Disconnect Button */}
-          <button
-            onClick={handleDisconnect}
-            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
-          >
-            <XMarkIcon className="w-4 h-4" />
-            Disconnect Wallet
-          </button>
+          
         </div>
       )}
 
-      {/* Testnet Warning */}
-      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <div className="flex items-center gap-2 text-yellow-700">
-          <ExclamationTriangleIcon className="w-4 h-4 flex-shrink-0" />
-          
-        </div>
-      </div>
+      
     </div>
   );
 }
