@@ -108,6 +108,12 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [notifications] = useState(3); // Mock notification count
 
+  // Financial services modal states
+  const [showEarnMoneyModal, setShowEarnMoneyModal] = useState(false);
+  const [showTakeLoanModal, setShowTakeLoanModal] = useState(false);
+  const [showLoanInterestModal, setShowLoanInterestModal] = useState(false);
+  const [showReferEarnModal, setShowReferEarnModal] = useState(false);
+
   // Convert LineFriend to Contact
   const convertLineFriendToContact = (friend: LineFriend): Contact => ({
     id: friend.userId,
@@ -456,8 +462,9 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
         </div>
       </header>
 
-      {/* Action Buttons */}
+      {/* Money Transfer Section */}
       <section className="px-6 mb-6">
+        <h2 className="text-lg font-bold text-black mb-4">Money Transfer</h2>
         <div className="bg-white rounded-2xl p-4 shadow-lg grid grid-cols-4 gap-3">
           <ActionButton onClick={() => setShowQRPay(true)} icon={<QrCodeIcon className="w-5 h-5" />} label="QR Pay" />
           <ActionButton onClick={() => setShowPayAnyoneModal(true)} icon={<UserIcon className="w-5 h-5" />} label="Pay anyone" />
@@ -466,11 +473,12 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
         </div>
       </section>
 
-      {/* Financial Services Buttons */}
+      {/* Get Loan, Invest Money Section */}
       <section className="px-6 mb-6">
+        <h2 className="text-lg font-bold text-black mb-4">Get Loan, Invest Money</h2>
         <div className="bg-white rounded-2xl p-4 shadow-lg grid grid-cols-4 gap-3">
           <ActionButton 
-            onClick={() => console.log('Earn Money clicked')} 
+            onClick={() => setShowEarnMoneyModal(true)} 
             icon={
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
@@ -479,7 +487,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
             label="Earn Money" 
           />
           <ActionButton 
-            onClick={() => console.log('Take Loan clicked')} 
+            onClick={() => setShowTakeLoanModal(true)} 
             icon={
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -488,7 +496,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
             label="Take Loan" 
           />
           <ActionButton 
-            onClick={() => console.log('Loan Interest Payment clicked')} 
+            onClick={() => setShowLoanInterestModal(true)} 
             icon={
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -497,7 +505,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
             label="Loan Interest" 
           />
           <ActionButton 
-            onClick={() => console.log('Refer and Earn clicked')} 
+            onClick={() => setShowReferEarnModal(true)} 
             icon={
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -736,6 +744,26 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
         onClose={() => setShowBulkPaymentModal(false)}
         onSuccess={handleBulkPaymentSuccess}
       />
+
+      {/* Earn Money Modal */}
+      {showEarnMoneyModal && (
+        <EarnMoneyModal onClose={() => setShowEarnMoneyModal(false)} />
+      )}
+
+      {/* Take Loan Modal */}
+      {showTakeLoanModal && (
+        <TakeLoanModal onClose={() => setShowTakeLoanModal(false)} />
+      )}
+
+      {/* Loan Interest Modal */}
+      {showLoanInterestModal && (
+        <LoanInterestModal onClose={() => setShowLoanInterestModal(false)} />
+      )}
+
+      {/* Refer and Earn Modal */}
+      {showReferEarnModal && (
+        <ReferEarnModal onClose={() => setShowReferEarnModal(false)} />
+      )}
       
       <PastInteractionPopup
         isOpen={showPastInteraction}
@@ -962,6 +990,446 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
         </div>
       )}
     </main>
+  );
+}
+
+// Earn Money Modal Component
+function EarnMoneyModal({ onClose }: { onClose: () => void }) {
+  const [activeTab, setActiveTab] = useState<'lend' | 'claim' | 'withdraw'>('lend');
+  const [selectedAsset, setSelectedAsset] = useState('USDT');
+  const [amount, setAmount] = useState('');
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl max-h-[80vh] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900">Earn Money</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200">
+          {(['lend', 'claim', 'withdraw'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-3 text-sm font-medium capitalize ${
+                activeTab === tab 
+                  ? 'text-green-600 border-b-2 border-green-600' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          {activeTab === 'lend' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select Asset</label>
+                <select 
+                  value={selectedAsset}
+                  onChange={(e) => setSelectedAsset(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="USDT">USDT</option>
+                  <option value="KAIA">KAIA</option>
+                  <option value="ETH">ETH</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Amount to Lend</label>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+              <div className="bg-green-50 p-3 rounded-lg">
+                <p className="text-sm text-green-800">Expected APY: 8.5%</p>
+                <p className="text-xs text-green-600 mt-1">Earn rewards by lending your assets</p>
+              </div>
+              <button className="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 transition-colors">
+                Lend {selectedAsset}
+              </button>
+            </div>
+          )}
+
+          {activeTab === 'claim' && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-medium text-gray-900 mb-2">Your Earnings</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">USDT Earned:</span>
+                    <span className="font-medium">12.45 USDT</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">KAIA Earned:</span>
+                    <span className="font-medium">0.023 KAIA</span>
+                  </div>
+                </div>
+              </div>
+              <button className="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 transition-colors">
+                Claim All Earnings
+              </button>
+            </div>
+          )}
+
+          {activeTab === 'withdraw' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select Asset to Withdraw</label>
+                <select 
+                  value={selectedAsset}
+                  onChange={(e) => setSelectedAsset(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="USDT">USDT (Available: 100.50)</option>
+                  <option value="KAIA">KAIA (Available: 5.23)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Amount to Withdraw</label>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+              <button className="w-full bg-red-500 text-white py-3 rounded-lg font-medium hover:bg-red-600 transition-colors">
+                Withdraw Funds
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Take Loan Modal Component
+function TakeLoanModal({ onClose }: { onClose: () => void }) {
+  const [activeTab, setActiveTab] = useState<'getLoan' | 'repayLoan'>('getLoan');
+  const [collateralAsset, setCollateralAsset] = useState('USDT');
+  const [borrowAmount, setBorrowAmount] = useState('');
+  const [collateralAmount, setCollateralAmount] = useState('');
+
+  const calculateCollateral = (borrowAmt: string) => {
+    const amount = parseFloat(borrowAmt) || 0;
+    const collateral = amount / 0.8; // 80% LTV ratio
+    setCollateralAmount(collateral.toFixed(2));
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl max-h-[80vh] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900">Take Loan</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200">
+          {(['getLoan', 'repayLoan'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-3 text-sm font-medium ${
+                activeTab === tab 
+                  ? 'text-green-600 border-b-2 border-green-600' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab === 'getLoan' ? 'Get Loan' : 'Repay Loan'}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          {activeTab === 'getLoan' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Collateral Asset</label>
+                <select 
+                  value={collateralAsset}
+                  onChange={(e) => setCollateralAsset(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="USDT">USDT</option>
+                  <option value="KAIA">KAIA</option>
+                  <option value="ETH">ETH</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Amount to Borrow (USDT)</label>
+                <input
+                  type="number"
+                  value={borrowAmount}
+                  onChange={(e) => {
+                    setBorrowAmount(e.target.value);
+                    calculateCollateral(e.target.value);
+                  }}
+                  placeholder="Enter borrow amount"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Required Collateral</label>
+                <input
+                  type="number"
+                  value={collateralAmount}
+                  readOnly
+                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50"
+                  placeholder="Collateral will be calculated"
+                />
+                <p className="text-xs text-gray-500 mt-1">LTV Ratio: 80% (You can borrow up to 80% of collateral value)</p>
+              </div>
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <p className="text-sm text-blue-800">Interest Rate: 5.5% APR</p>
+                <p className="text-xs text-blue-600 mt-1">Competitive rates for your loan</p>
+              </div>
+              <button 
+                disabled={!borrowAmount || parseFloat(borrowAmount) <= 0}
+                className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Get Loan
+              </button>
+            </div>
+          )}
+
+          {activeTab === 'repayLoan' && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-medium text-gray-900 mb-2">Current Loans</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Outstanding Amount:</span>
+                    <span className="font-medium">500.00 USDT</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Interest Accrued:</span>
+                    <span className="font-medium text-red-600">12.45 USDT</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total to Repay:</span>
+                    <span className="font-medium text-lg">512.45 USDT</span>
+                  </div>
+                </div>
+              </div>
+              <button className="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 transition-colors">
+                Repay Full Loan
+              </button>
+              <button className="w-full bg-gray-500 text-white py-3 rounded-lg font-medium hover:bg-gray-600 transition-colors">
+                Partial Repayment
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Loan Interest Modal Component
+function LoanInterestModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900">Loan Interest</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          <div className="space-y-4">
+            <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+              <h3 className="font-medium text-red-900 mb-3">Accumulated Interest</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-red-700">Loan Amount:</span>
+                  <span className="font-medium">500.00 USDT</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-red-700">Interest Rate:</span>
+                  <span className="font-medium">5.5% APR</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-red-700">Days Outstanding:</span>
+                  <span className="font-medium">45 days</span>
+                </div>
+                <hr className="border-red-200" />
+                <div className="flex justify-between">
+                  <span className="text-red-800 font-semibold">Total Interest Due:</span>
+                  <span className="font-bold text-lg text-red-900">12.45 USDT</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+              <p className="text-sm text-yellow-800">⚠️ Interest compounds daily. Pay early to save on interest charges.</p>
+            </div>
+
+            <button className="w-full bg-red-500 text-white py-3 rounded-lg font-medium hover:bg-red-600 transition-colors">
+              Pay Interest (12.45 USDT)
+            </button>
+
+            <div className="text-center">
+              <button className="text-gray-500 text-sm hover:text-gray-700 transition-colors">
+                View Interest History
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Refer and Earn Modal Component
+function ReferEarnModal({ onClose }: { onClose: () => void }) {
+  const referralCode = "NIKKU2025";
+  const referralLink = `https://nikkupay.com/invite/${referralCode}`;
+
+  const handleCopyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(referralCode);
+      // You could add a toast notification here
+    } catch (err) {
+      console.error("Failed to copy referral code:", err);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(referralLink);
+      // You could add a toast notification here
+    } catch (err) {
+      console.error("Failed to copy referral link:", err);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900">Refer & Earn</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          <div className="space-y-6">
+            {/* Earnings Summary */}
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <h3 className="font-medium text-green-900 mb-3">Your Referral Earnings</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-green-700">Total Referrals:</span>
+                  <span className="font-medium">12</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-green-700">Total Earned:</span>
+                  <span className="font-bold text-lg">60.00 USDT</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-green-700">Available to Claim:</span>
+                  <span className="font-medium">15.00 USDT</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Referral Code */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Your Referral Code</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={referralCode}
+                  readOnly
+                  className="flex-1 p-3 border border-gray-300 rounded-lg bg-gray-50 font-mono"
+                />
+                <button
+                  onClick={handleCopyCode}
+                  className="p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  <DocumentDuplicateIcon className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Referral Link */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Referral Link</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={referralLink}
+                  readOnly
+                  className="flex-1 p-3 border border-gray-300 rounded-lg bg-gray-50 text-xs"
+                />
+                <button
+                  onClick={handleCopyLink}
+                  className="p-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  <ShareIcon className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Referral Program Info */}
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <h4 className="font-medium text-blue-900 mb-2">How it works:</h4>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• Earn 5 USDT for each successful referral</li>
+                <li>• Your friend gets 2 USDT signup bonus</li>
+                <li>• Earn 0.1% of their transaction volume</li>
+                <li>• No limit on number of referrals</li>
+              </ul>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <button className="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 transition-colors">
+                Claim Earnings (15.00 USDT)
+              </button>
+              <button className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors">
+                Share on Social Media
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
