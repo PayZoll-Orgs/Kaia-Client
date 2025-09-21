@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUSDTBalance } from '@/lib/token-service';
-import { CONFIG, API_ENDPOINTS, METHOD_IDS } from '@/lib/config';
+import bulkPaymentService from '@/lib/bulk-payment-service';
+import { CONFIG, API_ENDPOINTS } from '@/lib/config';
 import { 
   XMarkIcon, 
   UserIcon, 
@@ -73,8 +74,6 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
   const [showInsufficientBalance, setShowInsufficientBalance] = useState(false);
 
   // Contract addresses - CORRECTED WITH LATEST DEPLOYMENTS
-  const BULK_PAYROLL_ADDRESS = CONFIG.BULK_PAYROLL_ADDRESS; // Use from config
-  const USDT_ADDRESS = CONFIG.USDT_ADDRESS; // Use from config
 
   // Load user's USDT balance
   const loadBalance = useCallback(async () => {
@@ -246,108 +245,23 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
         from: wallet.address
       });
 
-      // Contract parameters for BulkPayroll.bulkTransfer
-      const recipientAddresses = recipients.map(r => r.address);
-      const amounts = recipients.map(r => {
-        // Convert to wei (18 decimals for USDT)
-        const amountInWei = Math.round(parseFloat(r.amount) * Math.pow(10, 18));
-        return amountInWei.toString();
-      });
+      // ✅ Using new BulkPaymentService with clean deployment integration
+      const bulkRecipients = recipients.map(r => ({
+        address: r.address,
+        amount: r.amount,
+        userId: r.userId
+      }));
 
-      console.log('📊 Contract call parameters:', {
-        contract: BULK_PAYROLL_ADDRESS,
-        usdtToken: USDT_ADDRESS,
-        recipients: recipientAddresses,
-        amounts: amounts,
-        totalAmountWei: amounts.reduce((sum, amount) => sum + BigInt(amount), BigInt(0)).toString()
-      });
-
-      // Import wallet service dynamically
-      const { WalletService } = await import('../lib/wallet-service');
-      const walletService = WalletService.getInstance();
-
-      // Step 1: Approve USDT spending for BulkPayroll contract
-      console.log('🔓 Approving USDT spending for BulkPayroll contract...');
-      const totalAmountWei = amounts.reduce((sum, amount) => sum + BigInt(amount), BigInt(0));
-      
-      // ✅ CORRECTED: ERC20 approve function selector from clean deployment
-      const approveSelector = METHOD_IDS.USDT.APPROVE.slice(2); // Remove 0x prefix
-      const paddedSpenderAddress = BULK_PAYROLL_ADDRESS.slice(2).padStart(64, '0');
-      const paddedAmount = totalAmountWei.toString(16).padStart(64, '0');
-      const approveData = '0x' + approveSelector + paddedSpenderAddress + paddedAmount;
-
-      console.log('📝 Approve transaction data:', {
-        selector: approveSelector,
-        spender: BULK_PAYROLL_ADDRESS,
-        amount: totalAmountWei.toString(),
-        data: approveData
-      });
-
-      const approveTx = await walletService.sendTransaction(
-        USDT_ADDRESS,
-        '0x0',
-        '0x15f90', // Gas limit for approval
-        approveData
+      const result = await bulkPaymentService.executeBulkPayment(
+        CONFIG.USDT_ADDRESS,
+        bulkRecipients
       );
 
-      console.log('✅ USDT approval successful:', approveTx);
+      if (!result.success) {
+        throw new Error(result.error || 'Bulk payment failed');
+      }
 
-      // Step 2: Execute bulk transfer using proper contract call (matches working script)
-      console.log('📦 Executing bulk transfer...');
-      
-      // Prepare recipients and amounts arrays (exactly like the working script)
-      const contractRecipients = recipients.map(r => r.address);
-      const contractAmounts = recipients.map(r => {
-        // Convert amount to wei (18 decimals for USDT)
-        const amountInWei = BigInt(Math.floor(parseFloat(r.amount) * 1e18));
-        return amountInWei.toString();
-      });
-      
-      console.log('📊 Transaction summary:', {
-        recipientCount: recipients.length,
-        totalAmount: totalAmount,
-        recipients: contractRecipients,
-        amounts: contractAmounts.map(a => (BigInt(a) / BigInt(10**18)).toString() + ' USDT')
-      });
-
-      // Use ethers.js contract interface to call bulkTransfer (matches script approach)
-      const { ethers } = await import('ethers');
-      const provider = new ethers.JsonRpcProvider(CONFIG.RPC_URL);
-      
-      // ✅ CORRECTED BulkPayroll contract ABI for bulkTransfer function
-      const bulkPayrollABI = [
-        {
-          "inputs": [
-            { "internalType": "address", "name": "token", "type": "address" },
-            { "internalType": "address[]", "name": "recipients", "type": "address[]" },
-            { "internalType": "uint256[]", "name": "amounts", "type": "uint256[]" }
-          ],
-          "name": "bulkTransfer",
-          "outputs": [],
-          "stateMutability": "payable",
-          "type": "function"
-        }
-      ];
-      
-      const bulkPayrollContract = new ethers.Contract(BULK_PAYROLL_ADDRESS, bulkPayrollABI, provider);
-      
-      // ✅ CORRECTED: Encode the function call data with TOKEN parameter
-      const callData = bulkPayrollContract.interface.encodeFunctionData('bulkTransfer', [
-        USDT_ADDRESS,      // ✅ TOKEN ADDRESS (this was missing!)
-        contractRecipients,
-        contractAmounts
-      ]);
-      
-      console.log('📦 ✅ CORRECTED: Using proper ethers.js encoding for bulkTransfer(address, address[], uint256[])');
-      console.log('✅ Method signature now matches deployed contract exactly');
-
-      const bulkTx = await walletService.sendTransaction(
-        BULK_PAYROLL_ADDRESS,
-        '0x0',
-        '0x30d40', // Gas limit for bulk transfer (~200000)
-        callData // Properly encoded function call
-      );
-
+      const bulkTx = result.transactionHash!;
       console.log('✅ Bulk payment transaction sent:', bulkTx);
 
       // Record bulk payment in backend

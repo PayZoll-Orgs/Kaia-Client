@@ -1,6 +1,7 @@
 // Token service with fee delegation support
-import { CONFIG } from '@/lib/config';
+import { CONFIG, METHOD_IDS } from '@/lib/config';
 import { getGaslessTransactionService } from '@/lib/gasless-transactions';
+import KaiaPayErrorHandler from '@/lib/error-handler';
 
 export interface TokenBalance {
   balance: string;
@@ -107,7 +108,7 @@ export async function requestUSDTFromFaucet(walletAddress: string): Promise<Fauc
     
     // Create faucet transaction data (calling faucet() function)
     // Function signature: faucet() - no parameters
-    const faucetMethodId = '0xde5f72fd'; // First 4 bytes of keccak256("faucet()")
+    const faucetMethodId = METHOD_IDS.USDT.FAUCET; // ✅ Using verified method ID from clean deployment
     
     console.log('📝 Creating faucet transaction with parameters:', {
       contract: CONFIG.USDT_ADDRESS,
@@ -149,9 +150,10 @@ export async function requestUSDTFromFaucet(walletAddress: string): Promise<Fauc
     };
   } catch (error) {
     console.error('❌ Faucet request failed:', error);
+    const errorDetails = KaiaPayErrorHandler.handleFaucetError(error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Faucet request failed',
+      error: errorDetails.userMessage,
       gasless: false
     };
   }
@@ -194,7 +196,7 @@ export async function transferUSDT(
       decimals: 18
     });      // Create ERC20 transfer transaction data
       // Function signature: transfer(address,uint256)
-      const transferMethodId = 'a9059cbb'; // First 4 bytes of keccak256("transfer(address,uint256)")
+      const transferMethodId = METHOD_IDS.USDT.TRANSFER.slice(2); // ✅ Using verified method ID from clean deployment
       const paddedToAddress = toAddress.replace('0x', '').toLowerCase().padStart(64, '0');
       const paddedAmount = amountInWei.toString(16).padStart(64, '0');
       const transactionData = '0x' + transferMethodId + paddedToAddress + paddedAmount;
@@ -222,9 +224,10 @@ export async function transferUSDT(
       };
   } catch (error) {
     console.error('❌ USDT transfer failed:', error);
+    const errorDetails = KaiaPayErrorHandler.handleContractError(error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Transfer failed',
+      error: errorDetails.userMessage,
       gasless: false
     };
   }

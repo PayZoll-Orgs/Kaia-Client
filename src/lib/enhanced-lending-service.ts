@@ -123,8 +123,8 @@ class EnhancedLendingService {
         throw new Error('Wallet not connected');
       }
       
-      // Enhanced Lending Contract Address (placeholder - update when deployed)
-      const ENHANCED_LENDING_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+      // Enhanced Lending Contract Address - Updated to deployed address
+      const ENHANCED_LENDING_ADDRESS = CONFIG.ENHANCED_LENDING_ADDRESS;
       
       // Create claim referral rewards transaction data: claimReferralRewards()
       const claimMethodId = '0x05eaab4b'; // claimReferralRewards()
@@ -171,8 +171,8 @@ class EnhancedLendingService {
         throw new Error('Wallet not connected');
       }
       
-      // Enhanced Lending Contract Address (placeholder - update when deployed)
-      const ENHANCED_LENDING_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+      // Enhanced Lending Contract Address - Updated to deployed address
+      const ENHANCED_LENDING_ADDRESS = CONFIG.ENHANCED_LENDING_ADDRESS;
       
       // Convert amount to wei (18 decimals) - Use BigInt for precision
       const amountInWei = BigInt(Math.floor(parseFloat(amount) * Math.pow(10, 18)));
@@ -243,8 +243,8 @@ class EnhancedLendingService {
         throw new Error('Wallet not connected');
       }
       
-      // Enhanced Lending Contract Address (placeholder - update when deployed)
-      const ENHANCED_LENDING_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+      // Enhanced Lending Contract Address - Updated to deployed address
+      const ENHANCED_LENDING_ADDRESS = CONFIG.ENHANCED_LENDING_ADDRESS;
       
       // Create claim earnings transaction data: claimLendingEarnings(address)
       const claimMethodId = '0x790778b1'; // claimLendingEarnings(address)
@@ -287,8 +287,8 @@ class EnhancedLendingService {
         throw new Error('Wallet not connected');
       }
       
-      // Enhanced Lending Contract Address (placeholder - update when deployed)
-      const ENHANCED_LENDING_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+      // Enhanced Lending Contract Address - Updated to deployed address
+      const ENHANCED_LENDING_ADDRESS = CONFIG.ENHANCED_LENDING_ADDRESS;
       
       // Convert amount to wei (18 decimals) - This represents LP tokens to redeem
       const lpAmountInWei = Math.round(parseFloat(amount) * Math.pow(10, 18));
