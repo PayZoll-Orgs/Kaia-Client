@@ -98,7 +98,7 @@
         "transform": "lodash/{{member}}"
       }
     },
-    "outputFileTracingRoot": "/Users/bhaumikkhandela",
+    "outputFileTracingRoot": "/Users/18abhinav07/Documents/Kaia-Client",
     "experimental": {
       "useSkewCookie": false,
       "cacheLife": {
@@ -157,7 +157,7 @@
       "middlewarePrefetch": "flexible",
       "optimisticClientCache": true,
       "manualClientBasePath": false,
-      "cpus": 7,
+      "cpus": 11,
       "memoryBasedWorkersCount": false,
       "imgOptConcurrency": null,
       "imgOptTimeoutInSeconds": 7,
@@ -287,11 +287,11 @@
     "bundlePagesRouterDependencies": false,
     "configFileName": "next.config.ts",
     "turbopack": {
-      "root": "/Users/bhaumikkhandela"
+      "root": "/Users/18abhinav07/Documents/Kaia-Client"
     }
   },
-  "appDir": "/Users/bhaumikkhandela/Desktop/Bhaumik-coding/LINE_LANDING/my-app",
-  "relativeAppDir": "Desktop/Bhaumik-coding/LINE_LANDING/my-app",
+  "appDir": "/Users/18abhinav07/Documents/Kaia-Client",
+  "relativeAppDir": "",
   "files": [
     ".next/routes-manifest.json",
     ".next/server/pages-manifest.json",
