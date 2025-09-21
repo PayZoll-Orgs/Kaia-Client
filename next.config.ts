@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
   transpilePackages: ["ethers"],
 
   // Custom webpack config
-  webpack(config) {
+  webpack(config: any) {
     config.module.rules.push({
       test: /\.svg$/i,
       issuer: /\.[jt]sx?$/,
