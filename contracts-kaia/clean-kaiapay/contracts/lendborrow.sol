@@ -19,7 +19,9 @@ interface IDummyUSDT is IERC20 {
 contract LendingProtocol is ReentrancyGuard, Ownable {
     // State variables
     mapping(address => uint256) public collateralBalance;
-    mapping(address => mapping(address => uint256)) public debtBalance; // borrower => token => amount
+    mapping(address => mapping(address => uint256)) public debtBalance; // borrower => token => amount (total = principal + interest)
+    mapping(address => mapping(address => uint256)) public principalBalance; // borrower => token => principal only
+    mapping(address => mapping(address => uint256)) public accruedInterest; // borrower => token => accrued interest
     mapping(address => uint256) public lastInterestUpdate; // borrower => timestamp
     
     // Token addresses
@@ -58,6 +60,8 @@ contract LendingProtocol is ReentrancyGuard, Ownable {
     event Redeem(address indexed user, address indexed lpToken, uint256 amount, uint256 underlying);
     event Borrow(address indexed user, address indexed token, uint256 amount);
     event Repay(address indexed user, address indexed token, uint256 amount);
+    event InterestRepaid(address indexed user, address indexed token, uint256 amount);
+    event PrincipalRepaid(address indexed user, address indexed token, uint256 amount);
     event CollateralDeposited(address indexed user, uint256 amount);
     event CollateralWithdrawn(address indexed user, uint256 amount);
     event Liquidate(address indexed liquidator, address indexed borrower, uint256 repayAmount, uint256 collateralSeized);
@@ -121,7 +125,7 @@ contract LendingProtocol is ReentrancyGuard, Ownable {
         uint256 underlyingAmount = _calculateUnderlyingToReturn(lpToken, amount);
         require(IERC20(underlyingToken).balanceOf(address(this)) >= underlyingAmount, "Insufficient liquidity");
         
-        // Interactions
+        // Interaction≠s
         ILPToken(lpToken).burn(msg.sender, amount);
         IERC20(underlyingToken).transfer(msg.sender, underlyingAmount);
         
@@ -173,6 +177,7 @@ contract LendingProtocol is ReentrancyGuard, Ownable {
         
         // Effects
         debtBalance[msg.sender][token] = newDebtBalance;
+        principalBalance[msg.sender][token] = principalBalance[msg.sender][token] + amount; // Track principal separately
         lastInterestUpdate[msg.sender] = block.timestamp;
         
         // Interactions
@@ -201,6 +206,63 @@ contract LendingProtocol is ReentrancyGuard, Ownable {
         
         emit Repay(msg.sender, token, repayAmount);
     }
+
+    /**
+     * @notice Repay only the accrued interest (not principal)
+     * @param token The token to repay interest for (KAIA or USDT)
+     * @param amount Amount of interest to repay (0 = pay all accrued interest)
+     */
+    function repayInterest(address token, uint256 amount) external nonReentrant {
+        require(token == KAIA || token == USDT, "Invalid token");
+        
+        // Update interest first to get latest accrued amount
+        _updateInterest(msg.sender);
+        
+        uint256 totalAccruedInterest = accruedInterest[msg.sender][token];
+        require(totalAccruedInterest > 0, "No accrued interest to repay");
+        
+        // Determine repay amount (0 = pay all interest)
+        uint256 repayAmount = amount == 0 ? totalAccruedInterest : 
+                             (amount > totalAccruedInterest ? totalAccruedInterest : amount);
+        
+        require(repayAmount > 0, "Repay amount must be > 0");
+        
+        // Effects - Reduce interest balances
+        accruedInterest[msg.sender][token] = accruedInterest[msg.sender][token] - repayAmount;
+        debtBalance[msg.sender][token] = debtBalance[msg.sender][token] - repayAmount;
+        
+        // Interactions
+        IERC20(token).transferFrom(msg.sender, address(this), repayAmount);
+        
+        emit InterestRepaid(msg.sender, token, repayAmount);
+    }
+
+    /**
+     * @notice Repay principal amount (interest should be current for best practice)
+     * @param token The token to repay principal for
+     * @param amount Principal amount to repay
+     */
+    function repayPrincipal(address token, uint256 amount) external nonReentrant {
+        require(token == KAIA || token == USDT, "Invalid token");
+        require(amount > 0, "Amount must be > 0");
+        
+        // Update interest first
+        _updateInterest(msg.sender);
+        
+        uint256 currentPrincipal = principalBalance[msg.sender][token];
+        require(currentPrincipal > 0, "No principal to repay");
+        
+        uint256 repayAmount = amount > currentPrincipal ? currentPrincipal : amount;
+        
+        // Effects - Reduce principal balances
+        principalBalance[msg.sender][token] = principalBalance[msg.sender][token] - repayAmount;
+        debtBalance[msg.sender][token] = debtBalance[msg.sender][token] - repayAmount;
+        
+        // Interactions
+        IERC20(token).transferFrom(msg.sender, address(this), repayAmount);
+        
+        emit PrincipalRepaid(msg.sender, token, repayAmount);
+    }
     
     // Interest calculation
     function _updateInterest(address borrower) internal {
@@ -213,18 +275,20 @@ contract LendingProtocol is ReentrancyGuard, Ownable {
         uint256 timeElapsed = block.timestamp - lastUpdate;
         if (timeElapsed == 0) return;
         
-        // Update KAIA debt
-        uint256 kaiaDebt = debtBalance[borrower][KAIA];
-        if (kaiaDebt > 0) {
-            uint256 interest = kaiaDebt * ANNUAL_INTEREST_RATE * timeElapsed / 100 / SECONDS_PER_YEAR;
-            debtBalance[borrower][KAIA] = kaiaDebt + interest;
+        // Update KAIA debt - calculate interest on principal only
+        uint256 kaiaPrincipal = principalBalance[borrower][KAIA];
+        if (kaiaPrincipal > 0) {
+            uint256 interest = kaiaPrincipal * ANNUAL_INTEREST_RATE * timeElapsed / 100 / SECONDS_PER_YEAR;
+            accruedInterest[borrower][KAIA] = accruedInterest[borrower][KAIA] + interest; // Track interest separately
+            debtBalance[borrower][KAIA] = debtBalance[borrower][KAIA] + interest; // Update total debt
         }
         
-        // Update USDT debt
-        uint256 usdtDebt = debtBalance[borrower][USDT];
-        if (usdtDebt > 0) {
-            uint256 interest = usdtDebt * ANNUAL_INTEREST_RATE * timeElapsed / 100 / SECONDS_PER_YEAR;
-            debtBalance[borrower][USDT] = usdtDebt + interest;
+        // Update USDT debt - calculate interest on principal only
+        uint256 usdtPrincipal = principalBalance[borrower][USDT];
+        if (usdtPrincipal > 0) {
+            uint256 interest = usdtPrincipal * ANNUAL_INTEREST_RATE * timeElapsed / 100 / SECONDS_PER_YEAR;
+            accruedInterest[borrower][USDT] = accruedInterest[borrower][USDT] + interest; // Track interest separately
+            debtBalance[borrower][USDT] = debtBalance[borrower][USDT] + interest; // Update total debt
         }
         
         lastInterestUpdate[borrower] = block.timestamp;
@@ -251,7 +315,21 @@ contract LendingProtocol is ReentrancyGuard, Ownable {
         
         require(collateralBalance[borrower] >= collateralToSeize, "Insufficient collateral");
         
-        // Effects
+        // Effects - Reduce debt from interest first, then principal
+        uint256 currentAccruedInterest = accruedInterest[borrower][repayToken];
+        
+        if (actualRepayAmount <= currentAccruedInterest) {
+            // Repaying only interest
+            accruedInterest[borrower][repayToken] = currentAccruedInterest - actualRepayAmount;
+        } else {
+            // Repaying interest + principal
+            uint256 interestPortion = currentAccruedInterest;
+            uint256 principalPortion = actualRepayAmount - interestPortion;
+            
+            accruedInterest[borrower][repayToken] = 0;
+            principalBalance[borrower][repayToken] = principalBalance[borrower][repayToken] - principalPortion;
+        }
+        
         debtBalance[borrower][repayToken] = currentDebt - actualRepayAmount;
         collateralBalance[borrower] = collateralBalance[borrower] - collateralToSeize;
         
@@ -273,6 +351,73 @@ contract LendingProtocol is ReentrancyGuard, Ownable {
     
     function isLiquidatable(address borrower) public view returns (bool) {
         return getLTV(borrower) > MAX_LTV * PRECISION;
+    }
+
+    /**
+     * @notice Get breakdown of user's debt (principal vs interest)
+     * @param borrower The borrower address
+     * @param token The token address (KAIA or USDT)
+     * @return principal Current principal balance
+     * @return accrued Current accrued interest (including pending)
+     * @return total Total debt (principal + accrued interest)
+     * @return currentInterestRate Annual interest rate (5%)
+     */
+    function getDebtBreakdown(address borrower, address token) external view returns (
+        uint256 principal,
+        uint256 accrued, 
+        uint256 total,
+        uint256 currentInterestRate
+    ) {
+        principal = principalBalance[borrower][token];
+        accrued = accruedInterest[borrower][token];
+        
+        // Calculate pending interest since last update
+        uint256 lastUpdate = lastInterestUpdate[borrower];
+        if (lastUpdate > 0 && principal > 0) {
+            uint256 timeElapsed = block.timestamp - lastUpdate;
+            uint256 pendingInterest = principal * ANNUAL_INTEREST_RATE * timeElapsed / 100 / SECONDS_PER_YEAR;
+            accrued = accrued + pendingInterest;
+        }
+        
+        total = principal + accrued;
+        currentInterestRate = ANNUAL_INTEREST_RATE; // 5%
+    }
+
+    /**
+     * @notice Get total accrued interest for a borrower across all tokens
+     * @param borrower The borrower address
+     * @return totalInterestUSD Total accrued interest in USD value
+     */
+    function getTotalAccruedInterest(address borrower) external view returns (uint256 totalInterestUSD) {
+        // Get current interest for both tokens
+        (, uint256 kaiaInterest,,) = this.getDebtBreakdown(borrower, KAIA);
+        (, uint256 usdtInterest,,) = this.getDebtBreakdown(borrower, USDT);
+        
+        // Convert to USD
+        uint256 kaiaInterestUSD = _getTokenValueUSD(KAIA, kaiaInterest);
+        uint256 usdtInterestUSD = _getTokenValueUSD(USDT, usdtInterest);
+        
+        return kaiaInterestUSD + usdtInterestUSD;
+    }
+
+    /**
+     * @notice Get interest payment info for UI
+     * @param borrower The borrower address
+     * @param token The token address
+     * @return canPayInterest Whether borrower has accrued interest to pay
+     * @return minInterestPayment Minimum interest payment amount
+     * @return totalInterestOwed Total interest currently owed
+     */
+    function getInterestPaymentInfo(address borrower, address token) external view returns (
+        bool canPayInterest,
+        uint256 minInterestPayment,
+        uint256 totalInterestOwed
+    ) {
+        (, uint256 accrued,,) = this.getDebtBreakdown(borrower, token);
+        
+        canPayInterest = accrued > 0;
+        minInterestPayment = accrued > 0 ? 1 : 0; // Minimum 1 wei if any interest exists
+        totalInterestOwed = accrued;
     }
     
     // Internal helper functions
