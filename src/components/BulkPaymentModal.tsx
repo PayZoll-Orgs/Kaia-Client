@@ -48,16 +48,16 @@ interface BulkPaymentModalProps {
   onSuccess: (paymentData: BulkPaymentData) => void;
 }
 
-// Utility function to encode parameters for bulkTransfer(address[], uint256[])
-function encodeBulkTransferData(recipients: string[], amounts: string[]): string {
-  // This is a simplified ABI encoding for two dynamic arrays
-  // In production, use a proper ABI encoding library like ethers.js
-  
-  // For now, we'll create a basic encoding that follows ABI specification
-  // Structure: [offset1][offset2][array1_length][array1_data...][array2_length][array2_data...]
+// Utility function to encode parameters for bulkTransfer(address, address[], uint256[])
+function encodeBulkTransferData(token: string, recipients: string[], amounts: string[]): string {
+  // ABI encoding for bulkTransfer(address token, address[] recipients, uint256[] amounts)
+  // Structure: [token_address][offset1][offset2][array1_length][array1_data...][array2_length][array2_data...]
   
   const recipientCount = recipients.length;
   const amountCount = amounts.length;
+  
+  // Encode token address (32 bytes)
+  const paddedToken = token.toLowerCase().replace('0x', '').padStart(64, '0');
   
   // Convert addresses to 32-byte hex strings (pad to 64 chars)
   const paddedRecipients = recipients.map(addr => 
@@ -72,8 +72,9 @@ function encodeBulkTransferData(recipients: string[], amounts: string[]): string
   });
   
   // Calculate offsets (each offset is 32 bytes = 64 hex chars)
-  const offset1 = '0000000000000000000000000000000000000000000000000000000000000040'; // 64 bytes
-  const offset2 = (64 + 32 + recipientCount * 32).toString(16).padStart(64, '0'); // After first array
+  // First array starts after token (32 bytes) + 2 offsets (64 bytes) = 96 bytes = 0x60
+  const offset1 = '0000000000000000000000000000000000000000000000000000000000000060'; // 96 bytes
+  const offset2 = (96 + 32 + recipientCount * 32).toString(16).padStart(64, '0'); // After first array
   
   // Encode recipient array
   const recipientLength = recipientCount.toString(16).padStart(64, '0');
@@ -83,8 +84,8 @@ function encodeBulkTransferData(recipients: string[], amounts: string[]): string
   const amountLength = amountCount.toString(16).padStart(64, '0');
   const amountData = paddedAmounts.join('');
   
-  // Combine all parts
-  const encoded = '0x' + offset1 + offset2 + recipientLength + recipientData + amountLength + amountData;
+  // Combine all parts: token + offset1 + offset2 + recipients_array + amounts_array
+  const encoded = '0x' + paddedToken + offset1 + offset2 + recipientLength + recipientData + amountLength + amountData;
   
   return encoded;
 }
@@ -335,9 +336,9 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
       console.log('📦 Executing bulk transfer...');
       
       // BulkPayroll.bulkTransfer function selector and parameter encoding
-      // Method signature: bulkTransfer(address[],uint256[])
-      // Method ID: 0x153a1f3e (from contract verification)
-      const bulkTransferSelector = '0x153a1f3e';
+      // Method signature: bulkTransfer(address,address[],uint256[])
+      // Method ID: 0xc75deb12 (calculated from correct signature)
+      const bulkTransferSelector = '0xc75deb12';
       
       // Extract addresses and amounts for encoding
       const contractRecipients = recipients.map(r => r.address);
@@ -348,7 +349,7 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
       });
       
       // Encode parameters for bulkTransfer(address[] recipients, uint256[] amounts)
-      const encodedData = encodeBulkTransferData(contractRecipients, contractAmounts);
+      const encodedData = encodeBulkTransferData(CONFIG.USDT_ADDRESS, contractRecipients, contractAmounts);
       const callData = bulkTransferSelector + encodedData.slice(2); // Remove 0x from encoded data
       
       console.log('📦 Executing bulk transfer with proper ABI encoding');
