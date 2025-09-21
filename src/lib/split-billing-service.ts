@@ -39,7 +39,9 @@ class SplitBillingService {
     tokenAddress: string,
     participants: SplitBillParticipant[],
     totalAmount: string,
-    description: string
+    description: string,
+    payee?: string, // Optional payee (defaults to creator)
+    deadlineHours?: number // Optional deadline in hours (defaults to 7 days)
   ): Promise<CreateSplitResult> {
     console.log('📋 Creating split bill...', {
       tokenAddress,
@@ -59,17 +61,25 @@ class SplitBillingService {
       }
 
       // Prepare participant data
-      const participantAddresses = participants.map(p => p.address);
-      const participantAmounts = participants.map(p => 
+      const debtorAddresses = participants.map(p => p.address);
+      const debtorAmounts = participants.map(p => 
         Math.round(parseFloat(p.amount) * Math.pow(10, 18))
       );
 
+      // Set payee (defaults to creator if not specified)
+      const payeeAddress = payee || walletState.address;
+      
+      // Set deadline (defaults to 7 days from now)
+      const deadlineTimestamp = Math.floor(Date.now() / 1000) + (deadlineHours || 24 * 7) * 3600;
+
       console.log('📝 Split bill parameters:', {
         creator: walletState.address,
+        payee: payeeAddress,
         tokenAddress,
-        participantAddresses,
-        participantAmounts: participantAmounts.map(a => a.toString()),
+        debtorAddresses,
+        debtorAmounts: debtorAmounts.map(a => a.toString()),
         totalAmountWei: Math.round(parseFloat(totalAmount) * Math.pow(10, 18)),
+        deadline: deadlineTimestamp,
         description
       });
 
@@ -77,15 +87,15 @@ class SplitBillingService {
       const { ethers } = await import('ethers');
       const provider = new ethers.JsonRpcProvider(CONFIG.RPC_URL);
       
-      // ✅ CORRECTED SplitBilling contract ABI for createSplit function
+      // ✅ CORRECTED SplitBilling contract ABI for createSplit function (from deployed contract)
       const splitBillingABI = [
         {
           "inputs": [
-            { "internalType": "address", "name": "creator", "type": "address" },
-            { "internalType": "address[]", "name": "participants", "type": "address[]" },
+            { "internalType": "address", "name": "payee", "type": "address" },
+            { "internalType": "address[]", "name": "debtors", "type": "address[]" },
             { "internalType": "uint256[]", "name": "amounts", "type": "uint256[]" },
             { "internalType": "address", "name": "token", "type": "address" },
-            { "internalType": "uint256", "name": "totalAmount", "type": "uint256" },
+            { "internalType": "uint256", "name": "deadline", "type": "uint256" },
             { "internalType": "string", "name": "description", "type": "string" }
           ],
           "name": "createSplit",
@@ -97,13 +107,13 @@ class SplitBillingService {
       
       const splitBillingContract = new ethers.Contract(CONFIG.SPLIT_BILLING_ADDRESS, splitBillingABI, provider);
       
-      // ✅ CORRECTED: Encode the function call data with proper parameters
+      // ✅ CORRECTED: Encode the function call data with proper parameters (matching deployed contract)
       const callData = splitBillingContract.interface.encodeFunctionData('createSplit', [
-        walletState.address,    // creator
-        participantAddresses,   // participants array
-        participantAmounts,     // amounts array
+        payeeAddress,          // payee (who receives the money)
+        debtorAddresses,       // debtors array (who owes money)
+        debtorAmounts,         // amounts array (how much each debtor owes)
         tokenAddress,          // token address
-        Math.round(parseFloat(totalAmount) * Math.pow(10, 18)), // total amount in wei
+        deadlineTimestamp,     // deadline timestamp
         description            // description string
       ]);
 
