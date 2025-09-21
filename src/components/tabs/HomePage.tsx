@@ -157,14 +157,15 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
 
   // Fetch transaction history and process recent people
   const fetchTransactionHistory = useCallback(async () => {
-    const currentUser = currentUserProfile || await fetchAllUsersAndCurrentProfile();
-    if (!currentUser?.userId) return;
+    if (!currentUserProfile?.userId) {
+      console.log('⚠️ No current user profile available, skipping transaction history fetch');
+      return;
+    }
 
     try {
-      setLoading(true);
-      console.log('🔍 Fetching transaction history for user:', currentUser.userId);
+      console.log('🔍 Fetching transaction history for user:', currentUserProfile.userId);
       
-      const response = await fetch(`${CONFIG.BACKEND_URL}/api/history/getUserTxnHistory/${currentUser.userId}`);
+      const response = await fetch(`${CONFIG.BACKEND_URL}/api/history/getUserTxnHistory/${currentUserProfile.userId}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch transaction history');
@@ -182,29 +183,29 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
         
         // Determine the other user in the transaction
         if (txn.transactionType === 'P2P') {
-          if (txn.senderId === currentUser.userId) {
+          if (txn.senderId === currentUserProfile.userId) {
             otherUserId = txn.receiverId || null;
-          } else if (txn.receiverId === currentUser.userId) {
+          } else if (txn.receiverId === currentUserProfile.userId) {
             otherUserId = txn.senderId || null;
           }
         } else if (txn.transactionType === 'Bulk Transfer') {
-          if (txn.senderId === currentUser.userId) {
+          if (txn.senderId === currentUserProfile.userId) {
             // Current user is sender, get receivers
             txn.receiverIds?.forEach(receiverId => {
-              if (receiverId !== currentUser.userId) {
+              if (receiverId !== currentUserProfile.userId) {
                 otherUserId = receiverId;
               }
             });
           }
         } else if (txn.transactionType === 'Split Payment') {
-          if (txn.payeeId === currentUser.userId) {
+          if (txn.payeeId === currentUserProfile.userId) {
             // Current user is payee, get contributors
             txn.contributorIds?.forEach(contributorId => {
-              if (contributorId !== currentUser.userId) {
+              if (contributorId !== currentUserProfile.userId) {
                 otherUserId = contributorId;
               }
             });
-          } else if (txn.contributorIds?.includes(currentUser.userId)) {
+          } else if (txn.contributorIds?.includes(currentUserProfile.userId)) {
             // Current user is contributor, get payee
             otherUserId = txn.payeeId || null;
           }
@@ -260,7 +261,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
     } finally {
       setLoading(false);
     }
-  }, [currentUserProfile, allUsers, fetchAllUsersAndCurrentProfile]);
+  }, [currentUserProfile, allUsers]);
 
   // Fetch transactions for specific person
   const fetchPersonTransactions = useCallback((person: RecentPerson) => {
@@ -283,14 +284,21 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
     setShowPersonTransactions(true);
   }, [transactions, currentUserProfile?.userId]);
 
-  // Load data when component mounts or user changes
+  // Load user profile data when component mounts or user changes
   useEffect(() => {
     if (user?.userId) {
-      fetchAllUsersAndCurrentProfile().then(() => {
-        fetchTransactionHistory();
-      });
+      // Set loading state to prevent blinking
+      setLoading(true);
+      fetchAllUsersAndCurrentProfile();
     }
-  }, [user?.userId, fetchAllUsersAndCurrentProfile, fetchTransactionHistory]); // Only run when user changes
+  }, [user?.userId, fetchAllUsersAndCurrentProfile]);
+
+  // Fetch transaction history when currentUserProfile becomes available
+  useEffect(() => {
+    if (currentUserProfile?.userId) {
+      fetchTransactionHistory();
+    }
+  }, [currentUserProfile?.userId, fetchTransactionHistory]);
 
   const handleQRScan = (result: string) => {
     console.log("QR Code scanned:", result);
