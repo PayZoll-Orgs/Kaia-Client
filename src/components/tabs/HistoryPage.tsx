@@ -225,7 +225,7 @@ export default function HistoryPage() {
           <span className="text-green-600">$</span>{Math.abs(analytics.netBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </div>
         <div className="text-sm text-gray-500 mt-1">
-          Net Balance {analytics.netBalance >= 0 ? '(Positive)' : '(Negative)'}
+          Net Transaction {analytics.netBalance >= 0 ? '(Positive)' : '(Negative)'}
         </div>
       </div>
 
@@ -297,159 +297,74 @@ export default function HistoryPage() {
         </div>
 
         <div className="flex items-center justify-between">
-          {/* Donut Chart */}
-          <div className="relative w-32 h-32">
-            {tooltipPosition && hoveredSegment && (
-              <div 
-                className="absolute z-10 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg whitespace-nowrap transform -translate-x-1/2 -translate-y-full"
-                style={{ 
-                  left: tooltipPosition.x,
-                  top: tooltipPosition.y - 10
-                }}
-              >
-                <div className="text-center">
-                  <div className="font-medium mb-1">
-                    {hoveredSegment === 'received' && 'Received'}
-                    {hoveredSegment === 'sent' && 'Sent'}
-                    {hoveredSegment === 'available' && 'Net Balance'}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>
-                      ${hoveredSegment === 'received' && analytics.totalReceived.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                      {hoveredSegment === 'sent' && analytics.totalSent.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                      {hoveredSegment === 'available' && Math.abs(analytics.netBalance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                </div>
-                <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-full">
-                  <div className="border-solid border-t-gray-900 border-t-8 border-x-transparent border-x-8 border-b-0"></div>
-                </div>
-              </div>
-            )}
-            <svg className="w-full h-full transform -rotate-90">
-              {/* Background circle */}
-              <circle
-                cx="64"
-                cy="64"
-                r="60"
-                fill="none"
-                stroke="#E5E7EB"
-                strokeWidth="8"
-                className="opacity-25"
-              />
-              {/* Received - Green segment */}
-              <circle
-                cx="64"
-                cy="64"
-                r="60"
-                fill="none"
-                stroke="#22C55E"
-                strokeWidth="8"
-                strokeDasharray="150.79 377"
-                onMouseEnter={(e) => handleSegmentHover('received', e)}
-                onMouseLeave={handleSegmentLeave}
-                className={`opacity-90 transition-all duration-[2000ms] ease-out cursor-pointer ${
-                  isChartVisible ? '' : 'stroke-dashoffset-[377]'
-                } ${hoveredSegment === 'received' ? 'stroke-[#16A34A]' : hoveredSegment ? 'opacity-50' : ''}`}
-              />
-              {/* Sent - Emerald segment */}
-              <circle
-                cx="64"
-                cy="64"
-                r="60"
-                fill="none"
-                stroke="#059669"
-                strokeWidth="8"
-                strokeDasharray="113.09 377"
-                strokeDashoffset="-150.79"
-                onMouseEnter={(e) => handleSegmentHover('sent', e)}
-                onMouseLeave={handleSegmentLeave}
-                className={`opacity-90 transition-all duration-[2000ms] ease-out delay-[600ms] cursor-pointer ${
-                  isChartVisible ? '' : 'stroke-dashoffset-[377]'
-                } ${hoveredSegment === 'sent' ? 'stroke-[#047857]' : hoveredSegment ? 'opacity-50' : ''}`}
-              />
-              {/* Available - Dark green segment */}
-              <circle
-                cx="64"
-                cy="64"
-                r="60"
-                fill="none"
-                stroke="#10B981"
-                strokeWidth="8"
-                strokeDasharray="113.09 377"
-                strokeDashoffset="-263.88"
-                onMouseEnter={(e) => handleSegmentHover('available', e)}
-                onMouseLeave={handleSegmentLeave}
-                className={`opacity-90 transition-all duration-[2000ms] ease-out delay-[1200ms] cursor-pointer ${
-                  isChartVisible ? '' : 'stroke-dashoffset-[377]'
-                } ${hoveredSegment === 'available' ? 'stroke-[#0D9488]' : hoveredSegment ? 'opacity-50' : ''}`}
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-sm text-gray-500">Total Balance</div>
-                <div className="text-lg font-bold text-gray-900">${Math.abs(analytics.netBalance).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
-              </div>
-            </div>
-          </div>
-
           {/* Stats */}
-          <div className="flex-1 ml-8">
+          <div className="w-full">
             <div className="space-y-4">
               <div 
-                className={`flex items-center justify-between p-2 rounded-lg transition-colors cursor-pointer ${
-                  hoveredSegment === 'received' ? 'bg-green-50' : ''
+                className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                  hoveredSegment === 'received' ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200 hover:border-green-300'
                 }`}
                 onMouseEnter={() => setHoveredSegment('received')}
                 onMouseLeave={() => setHoveredSegment(null)}
               >
-                <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full bg-green-500 transition-colors ${
+                <div className="flex items-center gap-3">
+                  <div className={`w-4 h-4 rounded-full bg-green-500 transition-colors ${
                     hoveredSegment === 'received' ? 'bg-[#16A34A]' : hoveredSegment ? 'opacity-50' : ''
                   }`}></div>
-                  <span className={`text-gray-600 transition-colors ${
-                    hoveredSegment === 'received' ? 'text-gray-900' : hoveredSegment ? 'opacity-50' : ''
-                  }`}>Received</span>
+                  <div>
+                    <span className={`text-gray-700 font-medium transition-colors ${
+                      hoveredSegment === 'received' ? 'text-gray-900' : hoveredSegment ? 'opacity-50' : ''
+                    }`}>Money Received</span>
+                    <div className="text-xs text-gray-500">Total incoming transactions</div>
+                  </div>
                 </div>
-                <span className={`text-gray-900 font-medium transition-opacity ${
+                <span className={`text-xl font-bold text-green-600 transition-opacity ${
                   hoveredSegment && hoveredSegment !== 'received' ? 'opacity-50' : ''
                 }`}>${analytics.totalReceived.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
+              
               <div 
-                className={`flex items-center justify-between p-2 rounded-lg transition-colors cursor-pointer ${
-                  hoveredSegment === 'sent' ? 'bg-emerald-50' : ''
+                className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                  hoveredSegment === 'sent' ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200 hover:border-red-300'
                 }`}
                 onMouseEnter={() => setHoveredSegment('sent')}
                 onMouseLeave={() => setHoveredSegment(null)}
               >
-                <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full bg-emerald-600 transition-colors ${
-                    hoveredSegment === 'sent' ? 'bg-[#047857]' : hoveredSegment ? 'opacity-50' : ''
+                <div className="flex items-center gap-3">
+                  <div className={`w-4 h-4 rounded-full bg-red-500 transition-colors ${
+                    hoveredSegment === 'sent' ? 'bg-[#DC2626]' : hoveredSegment ? 'opacity-50' : ''
                   }`}></div>
-                  <span className={`text-gray-600 transition-colors ${
-                    hoveredSegment === 'sent' ? 'text-gray-900' : hoveredSegment ? 'opacity-50' : ''
-                  }`}>Sent</span>
+                  <div>
+                    <span className={`text-gray-700 font-medium transition-colors ${
+                      hoveredSegment === 'sent' ? 'text-gray-900' : hoveredSegment ? 'opacity-50' : ''
+                    }`}>Money Sent</span>
+                    <div className="text-xs text-gray-500">Total outgoing transactions</div>
+                  </div>
                 </div>
-                <span className={`text-gray-900 font-medium transition-opacity ${
+                <span className={`text-xl font-bold text-red-600 transition-opacity ${
                   hoveredSegment && hoveredSegment !== 'sent' ? 'opacity-50' : ''
                 }`}>${analytics.totalSent.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
+              
               <div 
-                className={`flex items-center justify-between p-2 rounded-lg transition-colors cursor-pointer ${
-                  hoveredSegment === 'available' ? 'bg-emerald-50' : ''
+                className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                  hoveredSegment === 'available' ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:border-blue-300'
                 }`}
                 onMouseEnter={() => setHoveredSegment('available')}
                 onMouseLeave={() => setHoveredSegment(null)}
               >
-                <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full bg-emerald-500 transition-colors ${
-                    hoveredSegment === 'available' ? 'bg-[#0D9488]' : hoveredSegment ? 'opacity-50' : ''
+                <div className="flex items-center gap-3">
+                  <div className={`w-4 h-4 rounded-full bg-blue-500 transition-colors ${
+                    hoveredSegment === 'available' ? 'bg-[#2563EB]' : hoveredSegment ? 'opacity-50' : ''
                   }`}></div>
-                  <span className={`text-gray-600 transition-colors ${
-                    hoveredSegment === 'available' ? 'text-gray-900' : hoveredSegment ? 'opacity-50' : ''
-                  }`}>Net Balance</span>
+                  <div>
+                    <span className={`text-gray-700 font-medium transition-colors ${
+                      hoveredSegment === 'available' ? 'text-gray-900' : hoveredSegment ? 'opacity-50' : ''
+                    }`}>Net Balance</span>
+                    <div className="text-xs text-gray-500">Difference between received and sent</div>
+                  </div>
                 </div>
-                <span className={`text-gray-900 font-medium transition-opacity ${
+                <span className={`text-xl font-bold ${analytics.netBalance >= 0 ? 'text-green-600' : 'text-red-600'} transition-opacity ${
                   hoveredSegment && hoveredSegment !== 'available' ? 'opacity-50' : ''
                 }`}>${Math.abs(analytics.netBalance).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>

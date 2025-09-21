@@ -1,11 +1,38 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { CONFIG } from '@/lib/config';
 
 export default function AuthModal() {
   const { login, isLoading, isInLineApp } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Ping backend when login page opens
+  useEffect(() => {
+    const pingBackend = async () => {
+      try {
+        console.log('🔄 Pinging backend when login page opens...');
+        const response = await fetch(`${CONFIG.BACKEND_URL}/api/auth/ping`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Backend ping successful:', data);
+        } else {
+          console.warn('⚠️ Backend ping failed with status:', response.status);
+        }
+      } catch (error) {
+        console.error('❌ Backend ping error:', error);
+      }
+    };
+
+    pingBackend();
+  }, []); // Run once when component mounts
 
   const handleLogin = async () => {
     if (isLoading || isProcessing) return;

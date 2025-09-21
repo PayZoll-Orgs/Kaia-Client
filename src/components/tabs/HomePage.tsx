@@ -453,7 +453,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
         {/* Greeting */}
         <div className="px-6 mb-4">
           <h1 className="text-2xl font-semibold text-gray-900 mb-1">Hello {currentUserProfile?.displayName || userProfile?.displayName || user?.displayName || 'User'}!</h1>
-          <p className="text-gray-500">Let&apos;s save your money.</p>
+          <p className="text-gray-500">Let&apos;s manage your money.</p>
           {(currentUserProfile || userProfile) && (
             <p className="text-xs text-gray-400 mt-1">
               Wallet: {(currentUserProfile?.walletAddress || userProfile?.walletAddress)?.slice(0, 6)}...{(currentUserProfile?.walletAddress || userProfile?.walletAddress)?.slice(-4)}
@@ -999,11 +999,21 @@ function EarnMoneyModal({ onClose }: { onClose: () => void }) {
   const [selectedAsset, setSelectedAsset] = useState('USDT');
   const [amount, setAmount] = useState('');
 
+  // Asset Icon Component
+  const AssetIcon = ({ asset }: { asset: string }) => {
+    const iconMap = {
+      'USDT': '💲',
+      'KAIA': '🔸', 
+      'ETH': '💎'
+    };
+    return <span className="text-lg">{iconMap[asset as keyof typeof iconMap] || '💰'}</span>;
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl max-h-[80vh] overflow-hidden">
+      <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl max-h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-xl font-bold text-gray-900">Earn Money</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1013,7 +1023,7 @@ function EarnMoneyModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-200">
+        <div className="flex border-b border-gray-200 flex-shrink-0">
           {(['lend', 'claim', 'withdraw'] as const).map((tab) => (
             <button
               key={tab}
@@ -1030,7 +1040,7 @@ function EarnMoneyModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 flex-1 overflow-y-auto hide-scrollbar">
           {activeTab === 'lend' && (
             <div className="space-y-4">
               <div>
@@ -1040,9 +1050,9 @@ function EarnMoneyModal({ onClose }: { onClose: () => void }) {
                   onChange={(e) => setSelectedAsset(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
-                  <option value="USDT">USDT</option>
-                  <option value="KAIA">KAIA</option>
-                  <option value="ETH">ETH</option>
+                  <option value="USDT">💲 USDT</option>
+                  <option value="KAIA">🔸 KAIA</option>
+                  <option value="ETH">💎 ETH</option>
                 </select>
               </div>
               <div>
@@ -1059,7 +1069,8 @@ function EarnMoneyModal({ onClose }: { onClose: () => void }) {
                 <p className="text-sm text-green-800">Expected APY: 8.5%</p>
                 <p className="text-xs text-green-600 mt-1">Earn rewards by lending your assets</p>
               </div>
-              <button className="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 transition-colors">
+              <button className="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 transition-colors flex items-center justify-center gap-2">
+                <AssetIcon asset={selectedAsset} />
                 Lend {selectedAsset}
               </button>
             </div>
@@ -1070,12 +1081,18 @@ function EarnMoneyModal({ onClose }: { onClose: () => void }) {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h3 className="font-medium text-gray-900 mb-2">Your Earnings</h3>
                 <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">USDT Earned:</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 flex items-center gap-2">
+                      <AssetIcon asset="USDT" />
+                      USDT Earned:
+                    </span>
                     <span className="font-medium">12.45 USDT</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">KAIA Earned:</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 flex items-center gap-2">
+                      <AssetIcon asset="KAIA" />
+                      KAIA Earned:
+                    </span>
                     <span className="font-medium">0.023 KAIA</span>
                   </div>
                 </div>
@@ -1095,8 +1112,8 @@ function EarnMoneyModal({ onClose }: { onClose: () => void }) {
                   onChange={(e) => setSelectedAsset(e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
-                  <option value="USDT">USDT (Available: 100.50)</option>
-                  <option value="KAIA">KAIA (Available: 5.23)</option>
+                  <option value="USDT">💲 USDT (Available: 100.50)</option>
+                  <option value="KAIA">🔸 KAIA (Available: 5.23)</option>
                 </select>
               </div>
               <div>
@@ -1109,7 +1126,8 @@ function EarnMoneyModal({ onClose }: { onClose: () => void }) {
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
-              <button className="w-full bg-red-500 text-white py-3 rounded-lg font-medium hover:bg-red-600 transition-colors">
+              <button className="w-full bg-red-500 text-white py-3 rounded-lg font-medium hover:bg-red-600 transition-colors flex items-center justify-center gap-2">
+                <AssetIcon asset={selectedAsset} />
                 Withdraw Funds
               </button>
             </div>
@@ -1135,9 +1153,9 @@ function TakeLoanModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl max-h-[80vh] overflow-hidden">
+      <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl max-h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-xl font-bold text-gray-900">Take Loan</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1147,7 +1165,7 @@ function TakeLoanModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-200">
+        <div className="flex border-b border-gray-200 flex-shrink-0">
           {(['getLoan', 'repayLoan'] as const).map((tab) => (
             <button
               key={tab}
@@ -1164,7 +1182,7 @@ function TakeLoanModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 flex-1 overflow-y-auto hide-scrollbar">
           {activeTab === 'getLoan' && (
             <div className="space-y-4">
               <div>
@@ -1253,9 +1271,9 @@ function TakeLoanModal({ onClose }: { onClose: () => void }) {
 function LoanInterestModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl">
+      <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl max-h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-xl font-bold text-gray-900">Loan Interest</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1265,7 +1283,7 @@ function LoanInterestModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 flex-1 overflow-y-auto hide-scrollbar">
           <div className="space-y-4">
             <div className="bg-red-50 p-4 rounded-lg border border-red-200">
               <h3 className="font-medium text-red-900 mb-3">Accumulated Interest</h3>
@@ -1335,9 +1353,9 @@ function ReferEarnModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl">
+      <div className="w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl max-h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-xl font-bold text-gray-900">Refer & Earn</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1347,7 +1365,7 @@ function ReferEarnModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 flex-1 overflow-y-auto hide-scrollbar">
           <div className="space-y-6">
             {/* Earnings Summary */}
             <div className="bg-green-50 p-4 rounded-lg border border-green-200">

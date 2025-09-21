@@ -140,3 +140,13 @@
 .animate-fade-in-delayed {
   animation: fadeInDelayed 1.5s ease-out forwards;
 }
+
+/* Custom scrollbar hiding for modal content */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
