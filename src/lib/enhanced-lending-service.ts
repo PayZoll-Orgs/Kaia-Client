@@ -174,14 +174,14 @@ class EnhancedLendingService {
       // Enhanced Lending Contract Address (placeholder - update when deployed)
       const ENHANCED_LENDING_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
       
-      // Convert amount to wei (18 decimals)
-      const amountInWei = Math.round(parseFloat(amount) * Math.pow(10, 18));
+      // Convert amount to wei (18 decimals) - Use BigInt for precision
+      const amountInWei = BigInt(Math.floor(parseFloat(amount) * Math.pow(10, 18)));
       
       // Create deposit transaction data: deposit(address,uint256)
       const depositMethodId = '0x47e7ef24'; // deposit(address,uint256)
       const paddedTokenAddress = tokenAddress.replace('0x', '').toLowerCase().padStart(64, '0');
       const paddedAmount = amountInWei.toString(16).padStart(64, '0');
-      const transactionData = depositMethodId + paddedTokenAddress + paddedAmount;
+      const transactionData = '0x' + depositMethodId.replace('0x', '') + paddedTokenAddress + paddedAmount;
       
       console.log('📝 Creating deposit transaction:', {
         contract: ENHANCED_LENDING_ADDRESS,
@@ -194,13 +194,13 @@ class EnhancedLendingService {
       });
       
       // First, we need to approve the lending contract to spend our tokens
-      const approveAmount = (BigInt(amountInWei) * BigInt(2)).toString(); // Approve double for safety
+      const approveAmount = amountInWei * BigInt(2); // Approve double for safety
       console.log('� First approving token spend...');
       
       // ERC20 approve: approve(address,uint256)
       const approveMethodId = '095ea7b3'; // approve(address,uint256)
       const paddedSpender = ENHANCED_LENDING_ADDRESS.replace('0x', '').toLowerCase().padStart(64, '0');
-      const paddedApproveAmount = BigInt(approveAmount).toString(16).padStart(64, '0');
+      const paddedApproveAmount = approveAmount.toString(16).padStart(64, '0');
       const approveData = '0x' + approveMethodId + paddedSpender + paddedApproveAmount;
       
       // Send approve transaction first
