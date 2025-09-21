@@ -49,7 +49,7 @@ export async function getUSDTBalance(walletAddress: string): Promise<TokenBalanc
     return {
       balance: balance,
       rawBalance: rawBalance,
-      decimals: 18, // MyDummyTokenWithFaucet uses 18 decimals (KIP7 standard)
+      decimals: 18, // DummyUSDT uses 18 decimals (ERC20 standard)
       symbol: "USDT",
       contractAddress: CONFIG.USDT_ADDRESS
     };
@@ -121,11 +121,11 @@ export async function requestUSDTFromFaucet(walletAddress: string): Promise<Fauc
     });
     
     console.log('🔍 Contract analysis:');
-    console.log('  - Contract: MyDummyTokenWithFaucet');
+    console.log('  - Contract: DummyUSDT');
     console.log('  - Function: faucet() external');
     console.log('  - No parameters required');
-    console.log('  - Cooldown: 24 hours');
-    console.log('  - Amount: 100 tokens (with 18 decimals)');
+    console.log('  - Cooldown: 24 hours (FAUCET_COOLDOWN)');
+    console.log('  - Amount: 1000 tokens (FAUCET_AMOUNT = 1000 * 10^18)');
     console.log('  - Requires contract to have balance');
     
     // Send transaction through LIFF wallet
@@ -144,7 +144,7 @@ export async function requestUSDTFromFaucet(walletAddress: string): Promise<Fauc
     return {
       success: true,
       transactionHash: txHash,
-      amount: "100.00", // Based on contract FAUCET_AMOUNT
+      amount: "1000.00", // Based on DummyUSDT FAUCET_AMOUNT = 1000 * 10^18
       gasless: false
     };
   } catch (error) {
@@ -186,7 +186,7 @@ export async function transferUSDT(
       throw new Error('LIFF wallet not connected');
     }
     
-    // Convert amount to wei (MyDummyTokenWithFaucet uses 18 decimals)
+    // Convert amount to wei (DummyUSDT uses 18 decimals)
     const amountInWei = Math.round(parseFloat(amount) * Math.pow(10, 18));
     console.log('💰 Amount conversion:', {
       originalAmount: amount,
