@@ -72,9 +72,9 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
   // Insufficient balance modal
   const [showInsufficientBalance, setShowInsufficientBalance] = useState(false);
 
-  // Contract addresses
-  const BULK_PAYROLL_ADDRESS = '0xE9bD986514a6d35B1B73BeA6F19804D3c7aed284';
-  const USDT_ADDRESS = '0xd55B72640f3e31910A688a2Dc81876F053115B09';
+  // Contract addresses - CORRECTED WITH LATEST DEPLOYMENTS
+  const BULK_PAYROLL_ADDRESS = CONFIG.BULK_PAYROLL_ADDRESS; // Use from config
+  const USDT_ADDRESS = CONFIG.USDT_ADDRESS; // Use from config
 
   // Load user's USDT balance
   const loadBalance = useCallback(async () => {
@@ -314,30 +314,32 @@ export default function BulkPaymentModal({ isOpen, onClose, onSuccess }: BulkPay
       const { ethers } = await import('ethers');
       const provider = new ethers.JsonRpcProvider(CONFIG.RPC_URL);
       
-      // BulkPayroll contract ABI for bulkTransfer function
+      // ✅ CORRECTED BulkPayroll contract ABI for bulkTransfer function
       const bulkPayrollABI = [
         {
           "inputs": [
+            { "internalType": "address", "name": "token", "type": "address" },
             { "internalType": "address[]", "name": "recipients", "type": "address[]" },
             { "internalType": "uint256[]", "name": "amounts", "type": "uint256[]" }
           ],
           "name": "bulkTransfer",
           "outputs": [],
-          "stateMutability": "nonpayable",
+          "stateMutability": "payable",
           "type": "function"
         }
       ];
       
       const bulkPayrollContract = new ethers.Contract(BULK_PAYROLL_ADDRESS, bulkPayrollABI, provider);
       
-      // Encode the function call data using ethers (this will be correct)
+      // ✅ CORRECTED: Encode the function call data with TOKEN parameter
       const callData = bulkPayrollContract.interface.encodeFunctionData('bulkTransfer', [
+        USDT_ADDRESS,      // ✅ TOKEN ADDRESS (this was missing!)
         contractRecipients,
         contractAmounts
       ]);
       
-      console.log('📦 Using proper ethers.js encoding for bulkTransfer(address[], uint256[])');
-      console.log('Method signature matches working script exactly');
+      console.log('📦 ✅ CORRECTED: Using proper ethers.js encoding for bulkTransfer(address, address[], uint256[])');
+      console.log('✅ Method signature now matches deployed contract exactly');
 
       const bulkTx = await walletService.sendTransaction(
         BULK_PAYROLL_ADDRESS,

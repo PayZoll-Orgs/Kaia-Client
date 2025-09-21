@@ -13,8 +13,8 @@ export const CONFIG = {
   FEE_DELEGATION_URL: 'https://fee-delegation-kairos.kaia.io',
   
   // Contract Addresses (deployed contracts from latest deployment - 2025-09-20T19:17:20.180Z)
-  USDT_ADDRESS: '0x8CCaC8CBE276a225B1Af2b85dEee8e12cFB48193', // USDT token address used by BulkPayroll contract
-  BULK_PAYROLL_ADDRESS: '0xE9bD986514a6d35B1B73BeA6F19804D3c7aed284', 
+  USDT_ADDRESS: '0xd55B72640f3e31910A688a2Dc81876F053115B09', // ✅ CORRECTED: Current faucet USDT address
+  BULK_PAYROLL_ADDRESS: '0x850Ee5aAA4e55668573D5Ce5f055c113Fe7bd0d4', // ✅ CORRECTED: Newly deployed BulkPayroll 
   SPLIT_BILLING_ADDRESS: '0x6892D8358bD3EE04a35Ad5844181BDED05dcdf2f',
   INVOICE_SERVICE_ADDRESS: '0xc70DfAf8d864125D37237fc7B034ACAE1f3397d9',
   ENHANCED_LENDING_ADDRESS: '0xc754860D0064f0707F5c5c9de2f0930d580E7Db7', // Latest Enhanced Lending Protocol
