@@ -290,7 +290,7 @@ export default function SplitBillModal({ isOpen, onClose, onSuccess }: SplitBill
       // For now, use a simplified approach - call the contract with minimal data
       // In production, this should use proper ABI encoding like ethers.js
       // The function selector for createSplit can be calculated offline
-      const createSplitSelector = '0x12345678'; // Placeholder - would be calculated from function signature
+      const createSplitSelector = '0x68fcb6fd'; // Placeholder - would be calculated from function signature
       
       console.log('⚠️  Using simplified contract interaction');
       console.log('📝 Split bill parameters:', {

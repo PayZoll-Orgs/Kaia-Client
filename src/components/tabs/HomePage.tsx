@@ -553,7 +553,7 @@ export default function HomePage({ onTabChange }: HomePageProps = {}) {
       {/* Recent Transactions */}
       <section className="px-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Recent Transaction</h2>
+          <h2 className="text-lg font-bold text-gray-900">Activity</h2>
           <button 
             onClick={() => onTabChange?.('history')}
             className="text-green-600 text-sm font-medium hover:text-green-700 transition-colors"
