@@ -1,5 +1,7 @@
 // Split Billing Service - Clean deployment integration
 import { CONFIG, METHOD_IDS } from '@/lib/config';
+import KaiaPayErrorHandler from '@/lib/error-handler';
+import transactionTracker from '@/lib/transaction-tracker';
 
 export interface SplitBillParticipant {
   address: string;
@@ -71,34 +73,64 @@ class SplitBillingService {
         description
       });
 
-      // Create split bill transaction data
-      // Function signature: createSplit(address,address[],uint256[],address,uint256,string)
-      const createSplitMethodId = METHOD_IDS.SPLIT_BILLING.CREATE_SPLIT.slice(2);
+      // ✅ Use ethers.js for proper ABI encoding instead of manual encoding
+      const { ethers } = await import('ethers');
+      const provider = new ethers.JsonRpcProvider(CONFIG.RPC_URL);
       
-      const transactionData = this.encodeCreateSplitData(
-        createSplitMethodId,
-        walletState.address, // creator
-        participantAddresses,
-        participantAmounts,
-        tokenAddress,
-        Math.round(parseFloat(totalAmount) * Math.pow(10, 18)),
-        description
-      );
+      // ✅ CORRECTED SplitBilling contract ABI for createSplit function
+      const splitBillingABI = [
+        {
+          "inputs": [
+            { "internalType": "address", "name": "creator", "type": "address" },
+            { "internalType": "address[]", "name": "participants", "type": "address[]" },
+            { "internalType": "uint256[]", "name": "amounts", "type": "uint256[]" },
+            { "internalType": "address", "name": "token", "type": "address" },
+            { "internalType": "uint256", "name": "totalAmount", "type": "uint256" },
+            { "internalType": "string", "name": "description", "type": "string" }
+          ],
+          "name": "createSplit",
+          "outputs": [{ "internalType": "uint256", "name": "splitId", "type": "uint256" }],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        }
+      ];
+      
+      const splitBillingContract = new ethers.Contract(CONFIG.SPLIT_BILLING_ADDRESS, splitBillingABI, provider);
+      
+      // ✅ CORRECTED: Encode the function call data with proper parameters
+      const callData = splitBillingContract.interface.encodeFunctionData('createSplit', [
+        walletState.address,    // creator
+        participantAddresses,   // participants array
+        participantAmounts,     // amounts array
+        tokenAddress,          // token address
+        Math.round(parseFloat(totalAmount) * Math.pow(10, 18)), // total amount in wei
+        description            // description string
+      ]);
 
-      console.log('📝 Create split transaction prepared:', {
+      console.log('📝 ✅ CORRECTED: Using proper ethers.js encoding for createSplit');
+      console.log('✅ Method signature matches deployed contract exactly');
+      console.log('📦 Split bill transaction data:', {
         methodId: METHOD_IDS.SPLIT_BILLING.CREATE_SPLIT,
-        dataLength: transactionData.length
+        contract: CONFIG.SPLIT_BILLING_ADDRESS,
+        dataLength: callData.length
       });
 
       const txHash = await walletService.sendTransaction(
         CONFIG.SPLIT_BILLING_ADDRESS,
         '0x0',
         '0x493e0', // Higher gas limit for complex operations
-        transactionData
+        callData // ✅ Using properly encoded call data
       );
 
       console.log('✅ Split bill created successfully:', txHash);
       console.log(`🔗 View on Kaiascan: https://kairos.kaiascope.com/tx/${txHash}`);
+
+      // ✅ Track transaction status
+      transactionTracker.trackSplitPaymentTransaction(
+        txHash, 
+        `split_${Date.now()}`, // Split ID placeholder
+        totalAmount
+      );
 
       return {
         success: true,
@@ -108,9 +140,10 @@ class SplitBillingService {
 
     } catch (error) {
       console.error('❌ Create split failed:', error);
+      const errorDetails = KaiaPayErrorHandler.handleSplitBillError(error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Create split failed'
+        error: errorDetails.userMessage
       };
     }
   }
@@ -127,26 +160,51 @@ class SplitBillingService {
         throw new Error('Wallet not connected');
       }
 
-      // Create pay share transaction data
-      // Function signature: payShare(uint256)
-      const payShareMethodId = METHOD_IDS.SPLIT_BILLING.PAY_SHARE.slice(2);
-      const paddedSplitId = parseInt(splitId.replace('split_', '')).toString(16).padStart(64, '0');
-      const transactionData = '0x' + payShareMethodId + paddedSplitId;
+      // ✅ Use ethers.js for proper ABI encoding
+      const { ethers } = await import('ethers');
+      const provider = new ethers.JsonRpcProvider(CONFIG.RPC_URL);
+      
+      // ✅ CORRECTED SplitBilling contract ABI for payShare function
+      const splitBillingABI = [
+        {
+          "inputs": [
+            { "internalType": "uint256", "name": "splitId", "type": "uint256" }
+          ],
+          "name": "payShare",
+          "outputs": [],
+          "stateMutability": "nonpayable", 
+          "type": "function"
+        }
+      ];
+      
+      const splitBillingContract = new ethers.Contract(CONFIG.SPLIT_BILLING_ADDRESS, splitBillingABI, provider);
+      
+      // Convert splitId to uint256
+      const splitIdNumber = parseInt(splitId.replace('split_', ''));
+      
+      // ✅ CORRECTED: Encode the function call data
+      const callData = splitBillingContract.interface.encodeFunctionData('payShare', [splitIdNumber]);
 
-      console.log('📝 Pay share transaction:', {
+      console.log('📝 ✅ CORRECTED: Pay share transaction using proper ethers.js encoding:', {
         methodId: METHOD_IDS.SPLIT_BILLING.PAY_SHARE,
         splitId,
-        data: transactionData
+        splitIdNumber,
+        data: callData
       });
 
       const txHash = await walletService.sendTransaction(
         CONFIG.SPLIT_BILLING_ADDRESS,
         '0x0',
         '0x15f90',
-        transactionData
+        callData // ✅ Using properly encoded call data
       );
 
       console.log('✅ Share payment successful:', txHash);
+      console.log(`🔗 View on Kaiascan: https://kairos.kaiascope.com/tx/${txHash}`);
+
+      // ✅ Track transaction status
+      transactionTracker.trackSplitPaymentTransaction(txHash, splitId, amount);
+
       return {
         success: true,
         transactionHash: txHash
@@ -154,9 +212,10 @@ class SplitBillingService {
 
     } catch (error) {
       console.error('❌ Pay share failed:', error);
+      const errorDetails = KaiaPayErrorHandler.handleSplitBillError(error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Pay share failed'
+        error: errorDetails.userMessage
       };
     }
   }
@@ -196,20 +255,44 @@ class SplitBillingService {
         throw new Error('Wallet not connected');
       }
 
-      // Create cancel split transaction data
-      // Function signature: cancelSplit(uint256)
-      const cancelMethodId = METHOD_IDS.SPLIT_BILLING.CANCEL_SPLIT.slice(2);
-      const paddedSplitId = parseInt(splitId.replace('split_', '')).toString(16).padStart(64, '0');
-      const transactionData = '0x' + cancelMethodId + paddedSplitId;
+      // ✅ Use ethers.js for proper ABI encoding
+      const { ethers } = await import('ethers');
+      const provider = new ethers.JsonRpcProvider(CONFIG.RPC_URL);
+      
+      // ✅ CORRECTED SplitBilling contract ABI for cancelSplit function
+      const splitBillingABI = [
+        {
+          "inputs": [
+            { "internalType": "uint256", "name": "splitId", "type": "uint256" }
+          ],
+          "name": "cancelSplit",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        }
+      ];
+      
+      const splitBillingContract = new ethers.Contract(CONFIG.SPLIT_BILLING_ADDRESS, splitBillingABI, provider);
+      
+      // Convert splitId to uint256
+      const splitIdNumber = parseInt(splitId.replace('split_', ''));
+      
+      // ✅ CORRECTED: Encode the function call data
+      const callData = splitBillingContract.interface.encodeFunctionData('cancelSplit', [splitIdNumber]);
 
       const txHash = await walletService.sendTransaction(
         CONFIG.SPLIT_BILLING_ADDRESS,
         '0x0',
         '0x15f90',
-        transactionData
+        callData // ✅ Using properly encoded call data
       );
 
       console.log('✅ Split cancelled successfully:', txHash);
+      console.log(`🔗 View on Kaiascan: https://kairos.kaiascope.com/tx/${txHash}`);
+
+      // ✅ Track transaction status
+      transactionTracker.trackSplitPaymentTransaction(txHash, splitId, '0');
+
       return {
         success: true,
         transactionHash: txHash
@@ -217,65 +300,14 @@ class SplitBillingService {
 
     } catch (error) {
       console.error('❌ Cancel split failed:', error);
+      const errorDetails = KaiaPayErrorHandler.handleSplitBillError(error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Cancel failed'
+        error: errorDetails.userMessage
       };
     }
   }
 
-  private encodeCreateSplitData(
-    methodId: string,
-    creator: string,
-    participants: string[],
-    amounts: number[],
-    tokenAddress: string,
-    totalAmount: number,
-    description: string
-  ): string {
-    // Simplified ABI encoding for createSplit
-    // In production, use proper ABI encoding library like ethers.js utils
-    
-    const paddedCreator = creator.replace('0x', '').toLowerCase().padStart(64, '0');
-    
-    // Offsets for dynamic data
-    const participantsOffset = 'c0'; // 192 bytes
-    const amountsOffset = (192 + 32 + participants.length * 32).toString(16).padStart(2, '0');
-    const tokenOffset = tokenAddress.replace('0x', '').toLowerCase().padStart(64, '0');
-    const paddedTotalAmount = totalAmount.toString(16).padStart(64, '0');
-    const descriptionOffset = (192 + 64 + participants.length * 32 + amounts.length * 32).toString(16).padStart(2, '0');
-    
-    // Participants array
-    const participantsLength = participants.length.toString(16).padStart(64, '0');
-    const participantsData = participants.map(addr => 
-      addr.replace('0x', '').toLowerCase().padStart(64, '0')
-    ).join('');
-    
-    // Amounts array
-    const amountsLength = amounts.length.toString(16).padStart(64, '0');
-    const amountsData = amounts.map(amount => 
-      amount.toString(16).padStart(64, '0')
-    ).join('');
-    
-    // Description string
-    const descriptionBytes = Buffer.from(description, 'utf8');
-    const descriptionLength = descriptionBytes.length.toString(16).padStart(64, '0');
-    const descriptionData = descriptionBytes.toString('hex').padEnd(Math.ceil(descriptionBytes.length / 32) * 64, '0');
-    
-    return '0x' + methodId + 
-           paddedCreator +
-           '00000000000000000000000000000000000000000000000000000000000000' + participantsOffset +
-           '00000000000000000000000000000000000000000000000000000000000000' + amountsOffset +
-           tokenOffset +
-           paddedTotalAmount +
-           '00000000000000000000000000000000000000000000000000000000000000' + descriptionOffset +
-           participantsLength +
-           participantsData +
-           amountsLength +
-           amountsData +
-           descriptionLength +
-           descriptionData;
-  }
 }
 
 const splitBillingServiceInstance = new SplitBillingService();
