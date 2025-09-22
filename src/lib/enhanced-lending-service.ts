@@ -47,7 +47,7 @@ export interface DebtBreakdown {
 class EnhancedLendingService {
   
   // Helper function for making read-only contract calls through WalletService
-  private async makeReadOnlyCall(methodId: string, encodedParams: string = '', contractAddress?: string): Promise<any> {
+  private async makeReadOnlyCall(methodId: string, encodedParams: string = '', contractAddress?: string): Promise<unknown> {
     try {
       // Import wallet service dynamically
       const { WalletService } = await import('./wallet-service');
@@ -96,10 +96,12 @@ class EnhancedLendingService {
   }
 
   // Helper function to safely format BigInt values
-  private formatSafe(value: any, decimals: number = 18): string {
+  private formatSafe(value: unknown, decimals: number = 18): string {
     try {
       if (!value || value === '0x' || value === '0x0') return '0';
-      const bigValue = BigInt(value);
+      // Type guard to ensure value can be converted to BigInt
+      if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'bigint') return '0';
+      const bigValue = BigInt(value as string | number | bigint);
       return (Number(bigValue) / Math.pow(10, decimals)).toString();
     } catch {
       return '0';
@@ -140,7 +142,7 @@ class EnhancedLendingService {
       const result = await this.makeReadOnlyCall(methodId, encodedParams);
       
       // Decode the result (5 uint256 values)
-      const values = this.decodeMultipleValues(result, 5);
+      const values = this.decodeMultipleValues(result as string, 5);
       
       // Get LP token balance from correct LP token contract
       const lpTokenAddress = tokenAddress === CONFIG.USDT_ADDRESS ? CONFIG.K_USDT_ADDRESS : CONFIG.K_KAIA_ADDRESS;
@@ -188,7 +190,7 @@ class EnhancedLendingService {
       
       // Decode the result (6 values: uint256, uint256, uint256, address[], bool, bool)
       // For simplicity, we'll focus on the first 3 uint256 values and 2 bools
-      const values = this.decodeMultipleValues(result, 5);
+      const values = this.decodeMultipleValues(result as string, 5);
       
       return {
         isRegistered: values[4] !== '0x0000000000000000000000000000000000000000000000000000000000000000',
@@ -228,7 +230,7 @@ class EnhancedLendingService {
       const result = await this.makeReadOnlyCall(methodId, paddedAddress);
       
       // Decode the result (9 values: uint256 currentLTV, uint256 totalCollateralUSD, uint256 totalDebtUSD, etc.)
-      const values = this.decodeMultipleValues(result, 9);
+      const values = this.decodeMultipleValues(result as string, 9);
       
       const currentLTV = this.formatSafe(values[0], 2); // LTV in basis points
       const totalCollateralUSD = this.formatSafe(values[1]);
@@ -289,7 +291,7 @@ class EnhancedLendingService {
       const result = await this.makeReadOnlyCall(methodId, encodedParams);
       
       // Decode the result (4 uint256 values: principal, accrued, total, currentInterestRate)
-      const values = this.decodeMultipleValues(result, 4);
+      const values = this.decodeMultipleValues(result as string, 4);
       
       return {
         principal: this.formatSafe(values[0]),

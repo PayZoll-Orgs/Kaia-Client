@@ -226,7 +226,7 @@ export default function EnhancedLendingDemo({ onClose }: EnhancedLendingDemoProp
             ].map(tab => (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key as any)}
+                onClick={() => setActiveTab(tab.key as 'dashboard' | 'lend' | 'borrow' | 'collateral' | 'referral')}
                 className={`py-4 px-2 border-b-2 font-medium text-sm ${
                   activeTab === tab.key
                     ? 'border-blue-500 text-blue-600'
