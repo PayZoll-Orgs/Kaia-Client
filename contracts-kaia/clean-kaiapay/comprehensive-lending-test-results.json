@@ -1,0 +1,79 @@
+{
+  "timestamp": "2025-09-21T17:51:15.172Z",
+  "account": "0xEEFfe4C8B285A3f55EEC9fB50C9c96F69f9B453e",
+  "tests": [
+    {
+      "category": "Collateral Management",
+      "test": "depositCollateral()",
+      "status": "PASSED",
+      "txHash": "0x2eeb624e6bd6f9374b85346ec5d6fc0123068c13aa2ce693a4f0bf1cd28cfc87",
+      "result": "150.0 USDY deposited"
+    },
+    {
+      "category": "Collateral Management",
+      "test": "withdrawCollateral()",
+      "status": "PASSED",
+      "txHash": "0xacc82c1cf12af349ae4929c8cb8bae659678212d4928cf9b3af31d37fc6c08f3",
+      "result": "140.0 USDY remaining"
+    },
+    {
+      "category": "Core Lending",
+      "test": "deposit()",
+      "status": "PASSED",
+      "txHash": "0xc81046aa3a00c3ef78a4f64c5a4d7c61e31d28a756951575a34d8bc6205deb19",
+      "result": "100.0 USDT deposited"
+    },
+    {
+      "category": "Core Lending",
+      "test": "getLenderInfo()",
+      "status": "PASSED",
+      "result": "Total deposited: 200.0 USDT"
+    },
+    {
+      "category": "Borrowing",
+      "test": "borrow()",
+      "status": "PASSED",
+      "txHash": "0xc7e3cd94b6dc39d8a1d7020d8d783ca7c9a41ca7ba914b40a54669f1599e0b22",
+      "result": "7.010000000491501775 USDT borrowed"
+    },
+    {
+      "category": "Borrowing",
+      "test": "getBorrowerDashboard()",
+      "status": "PASSED",
+      "result": "LTV: 5007142857493929839%, Collateral: $140.0"
+    },
+    {
+      "category": "Borrowing",
+      "test": "getDebtBreakdown()",
+      "status": "PASSED",
+      "result": "Principal: 7.01 USDT"
+    },
+    {
+      "category": "Borrowing",
+      "test": "repay()",
+      "status": "PASSED",
+      "txHash": "0x56ed1628da297ce1879a23a560b189ee9f99d3437cdebc4a65bf7e4f59dfad95",
+      "result": "Remaining debt: 3.510000056062912226 USDT"
+    },
+    {
+      "category": "Referral System",
+      "test": "registerReferralCode()",
+      "status": "PASSED",
+      "txHash": "0x634244de1460f3eb8cb77f197103d274fef7aa69087ed7c36b877d508097e203",
+      "result": "Code 'TEST093404' registered"
+    },
+    {
+      "category": "Referral System",
+      "test": "getReferralInfo()",
+      "status": "PASSED",
+      "result": "Registered: true, Total referrals: 0"
+    }
+  ],
+  "summary": {
+    "total": 10,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0,
+    "successRate": "100.0%"
+  }
+}

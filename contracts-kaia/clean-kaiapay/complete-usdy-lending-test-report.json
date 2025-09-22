@@ -1,0 +1,44 @@
+{
+  "timestamp": "2025-09-21T14:46:13.763Z",
+  "testName": "Complete USDY Lending Protocol Test",
+  "results": {
+    "initialBalances": {
+      "success": true,
+      "userUSDT": "990902500000000000.0",
+      "userUSDY": "99900.0"
+    },
+    "usdtDeposit": {
+      "success": true,
+      "amount": "500.0"
+    },
+    "collateralDeposit": {
+      "success": false,
+      "error": "execution reverted"
+    },
+    "borrowingCapacity": {
+      "success": false,
+      "error": "lendingProtocol.getCollateralValue is not a function"
+    },
+    "borrowing": {
+      "success": true,
+      "amount": "300.0",
+      "debt": "2500021380627.245052",
+      "newBalance": "990902499999999800.0"
+    },
+    "healthCheck": {
+      "success": false,
+      "error": "lendingProtocol.getHealthFactor is not a function"
+    },
+    "repayment": {
+      "success": true,
+      "amount": "100.0",
+      "remainingDebt": "2500021404309.589041"
+    }
+  },
+  "summary": {
+    "totalTests": 7,
+    "successCount": 4,
+    "successRate": 57,
+    "allPassed": false
+  }
+}

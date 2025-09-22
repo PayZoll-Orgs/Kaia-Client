@@ -1,0 +1,45 @@
+{
+  "timestamp": "2025-09-21T14:56:26.125Z",
+  "testName": "Final USDY Lending Protocol Test",
+  "results": {
+    "initialState": {
+      "success": true,
+      "usdtBalance": "990902499999999700.0",
+      "usdyBalance": "99800.0",
+      "currentCollateral": "200.0"
+    },
+    "liquidityProvision": {
+      "success": false,
+      "error": "execution reverted"
+    },
+    "collateralDeposit": {
+      "success": false,
+      "error": "execution reverted"
+    },
+    "borrowing": {
+      "success": true,
+      "borrowAmount": "200.0",
+      "debtBalance": "2500026224397.970862",
+      "ltv": "1250013112198985431"
+    },
+    "dashboard": {
+      "success": false,
+      "error": "invalid BigNumberish value (argument=\"value\", value=null, code=INVALID_ARGUMENT, version=6.15.0)"
+    },
+    "repayment": {
+      "success": true,
+      "repayAmount": "50.0",
+      "remainingDebt": "2500026256057.762848"
+    },
+    "lenderInfo": {
+      "success": false,
+      "error": "invalid BigNumberish value (argument=\"value\", value=null, code=INVALID_ARGUMENT, version=6.15.0)"
+    }
+  },
+  "summary": {
+    "totalTests": 7,
+    "successCount": 3,
+    "successRate": 43,
+    "status": "NEEDS_IMPROVEMENT"
+  }
+}

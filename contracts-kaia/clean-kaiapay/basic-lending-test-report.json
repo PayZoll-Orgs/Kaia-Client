@@ -1,0 +1,45 @@
+{
+  "timestamp": "2025-09-21T13:41:18.452Z",
+  "contracts": {
+    "enhancedLending": "0xD8695C45a3C710b38705c0F1Fda56A06EF7BbA79",
+    "usdt": "0x266E46b48884Ce37EB7eeD3Ba9cDee29D2a28799"
+  },
+  "testAccount": "0xEEFfe4C8B285A3f55EEC9fB50C9c96F69f9B453e",
+  "results": [
+    {
+      "test": "Contract state queries",
+      "status": "PASSED",
+      "data": {
+        "kaiaPrice": "0.15",
+        "usdtPrice": "1.0"
+      }
+    },
+    {
+      "test": "Register referral code",
+      "status": "PASSED",
+      "txHash": "0xc04a59c85c106d51bc1920b7151bfbc452bd828d3901e255d321014b4c382dfa"
+    },
+    {
+      "test": "USDT approval",
+      "status": "PASSED",
+      "txHash": "0x93a5ebfe1f184533375c46ced2c908187c249952afb9194cd124d6fec7461e62",
+      "allowance": "100.0"
+    },
+    {
+      "test": "Borrower dashboard",
+      "status": "FAILED",
+      "error": "invalid BigNumberish value (argument=\"value\", value=null, code=INVALID_ARGUMENT, version=6.15.0)"
+    },
+    {
+      "test": "Collateral deposit",
+      "status": "FAILED",
+      "error": "evm: execution reverted"
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "passed": 3,
+    "failed": 2,
+    "successRate": "60.0%"
+  }
+}

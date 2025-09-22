@@ -832,6 +832,45 @@
       "artifacts": [
         "DummyUSDT"
       ]
+    },
+    "/Users/kaushalchaudhari/Desktop/web3/projects/kaiaPay/kaia-client/Kaia-Client/contracts-kaia/clean-kaiapay/contracts/MockFeedRouter.sol": {
+      "lastModificationDate": 1758461843050,
+      "contentHash": "4d2209d1e40943c46be11f15d134ccae",
+      "sourceName": "contracts/MockFeedRouter.sol",
+      "solcConfig": {
+        "version": "0.8.28",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "viaIR": true,
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./IFeedRouter.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "MockFeedRouter"
+      ]
     }
   }
 }
