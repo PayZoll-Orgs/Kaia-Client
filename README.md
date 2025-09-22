@@ -1,4 +1,4 @@
-# 🏦 KaiaPay - Complete DeFi Ecosystem on LINE x Kaia
+# 🏦 PayZoll - Complete DeFi Ecosystem on LINE x Kaia
 
 [![LINE Platform](https://img.shields.io/badge/Platform-LINE-00C300?style=for-the-badge&logo=line)](https://line.me)
 [![Kaia Network](https://img.shields.io/badge/Network-Kaia-FF6B6B?style=for-the-badge)](https://kaia.io)
@@ -9,7 +9,7 @@
 
 ## 🌟 Overview
 
-KaiaPay is a comprehensive DeFi ecosystem built as a **LINE Mini DApp**, leveraging Kaia blockchain's ultra-fast transactions and LINE's massive user base. We provide traditional finance services in a decentralized manner, making DeFi accessible to mainstream users through familiar interfaces.
+PayZoll is a comprehensive DeFi ecosystem built as a **LINE Mini DApp**, leveraging Kaia blockchain's ultra-fast transactions and LINE's massive user base. We provide traditional finance services in a decentralized manner, making DeFi accessible to mainstream users through familiar interfaces.
 
 ### 🎯 Mission Statement
 *"Bridge traditional finance with DeFi by providing intuitive, secure, and accessible financial services through LINE's ecosystem, powered by Kaia blockchain's performance."*
@@ -623,4 +623,4 @@ Special thanks to:
 
 *Built with ❤️ for the future of decentralized finance*
 
-**KaiaPay Team © 2024 | Making DeFi Accessible Through LINE x Kaia**
+**PayZoll Team © 2025 | Making DeFi Accessible Through LINE x Kaia**
